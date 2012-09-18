@@ -20,13 +20,11 @@
 package org.dcache.chimera.nfs;
 
 
-import com.google.common.base.Function;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -52,18 +50,14 @@ public class ExportFile {
     }
 
     public ExportFile(File file) throws IOException  {
-
         _exports = parse(file);
-
     }
 
-
-    public List<String> getExports() {
-        return (List)Lists.newArrayList( Collections2.transform(_exports, new ExportPathExtractor()));
+    public List<FsExport> getExports() {
+        return Lists.newArrayList(_exports);
     }
 
     private static Set<FsExport> parse(File exportFile) throws IOException {
-
 
         BufferedReader br = new BufferedReader(new FileReader(exportFile));
         Set<FsExport> exports = new HashSet<FsExport>();
@@ -82,12 +76,10 @@ public class ExportFile {
                 if (line.charAt(0) == '#')
                     continue;
 
-                FsExport  export = null;
                 StringTokenizer st = new StringTokenizer(line);
                 String path = st.nextToken();
 
                 if( st.hasMoreTokens() ) {
-                    List<ExportClient> clients = new ArrayList<ExportClient>();
                     while(st.hasMoreTokens() ) {
 
                         String hostAndOptions = st.nextToken();
@@ -112,19 +104,13 @@ public class ExportFile {
                         }
 
                         ExportClient client = new ExportClient(host,isTrusted, rw );
-                        clients.add(client);
-
+                        exports.add(new FsExport(path, client));
                     }
-                    export  = new FsExport(path, clients);
+
                 }else{
                     ExportClient everyOne = new ExportClient("*",ExportClient.Root.NOTTRUSTED, ExportClient.IO.RO );
-
-                    List<ExportClient> clients = new ArrayList<ExportClient>(1);
-                    clients.add(everyOne);
-                    export = new FsExport(path, clients );
-
+                    exports.add( new FsExport(path, everyOne ) );
                 }
-                exports.add(export);
 
             }
         } finally {
@@ -140,9 +126,9 @@ public class ExportFile {
     }
 
 
-    public FsExport getExport(String path) {
+    public FsExport getExport(String path, InetAddress client) {
         for (FsExport export : _exports) {
-            if (export.getPath().equals(path)) {
+            if (export.getPath().equals(path) && export.isAllowed(client)) {
                 return export;
             }
         }
@@ -150,21 +136,15 @@ public class ExportFile {
     }
 
     // FIXME: one trusted client has an access to all tree
-    public  boolean isTrusted( java.net.InetAddress client ){
+    public boolean isTrusted(java.net.InetAddress client) {
 
-
-        List<String> exports = getExports();
-        for( String path: exports ) {
-
-            FsExport fsExport = getExport(path);
-            if( fsExport.isTrusted(client) ) {
+        List<FsExport> exports = getExports();
+        for (FsExport export : exports) {
+            if (export.isTrusted(client)) {
                 return true;
             }
-
         }
-
         return false;
-
     }
 
     /**
@@ -191,13 +171,6 @@ public class ExportFile {
         @Override
         public boolean apply(FsExport export) {
             return export.isAllowed(_client);
-        }
-    }
-
-    private static class ExportPathExtractor implements Function<FsExport, String> {
-        @Override
-        public String apply(FsExport export) {
-            return export.getPath();
         }
     }
 }

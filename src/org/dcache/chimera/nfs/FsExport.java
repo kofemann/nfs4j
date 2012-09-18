@@ -20,15 +20,12 @@
 package org.dcache.chimera.nfs;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.dcache.chimera.nfs.ExportClient.Root;
 
 public class FsExport {
 
     private final String _path;
-    private final List<ExportClient> _clients = new ArrayList<ExportClient>();
+    private final ExportClient _client;
 
     /**
      * NFS clients may be specified in a number of ways:<br>
@@ -66,10 +63,10 @@ public class FsExport {
      * @param path
      * @param clients list of {@link ExportClient} which allowed to mount this export.
      */
-    public FsExport(String path, List<ExportClient> clients) {
+    public FsExport(String path, ExportClient client) {
 
         _path = path;
-        _clients.addAll(clients);
+        _client = client;
 
     }
 
@@ -83,15 +80,9 @@ public class FsExport {
         StringBuilder sb = new StringBuilder();
         sb.append(_path).append(":");
 
-        if (_clients.isEmpty()) {
-            sb.append(" *");
-        } else {
-            for (ExportClient client : _clients) {
-                sb.append(" ").append(client.ip()).append("(").append(
-                        client.io()).append(",").append(client.trusted())
-                        .append(")");
-            }
-        }
+        sb.append(" ").append(_client.ip()).append("(").append(
+                _client.io()).append(",").append(_client.trusted())
+                .append(")");
 
         return sb.toString();
 
@@ -100,46 +91,16 @@ public class FsExport {
     public boolean isAllowed(InetAddress client) {
 
         // localhost always allowed
-        if( client.isLoopbackAddress() ) {
-            return true;
-        }else{
-
-            for (ExportClient exportClient : _clients) {
-                if(  IPMatcher.match(exportClient.ip(), client) ) {
-                    return true;
-                }
-            }
-
-        }
-
-        return false;
+        return client.isLoopbackAddress() || IPMatcher.match(_client.ip(), client);
     }
 
     public boolean isTrusted(InetAddress client) {
 
         // localhost always allowed
-        if( client.isLoopbackAddress() ) {
-            return true;
-        }else{
-
-            for (ExportClient exportClient : _clients) {
-                if( exportClient.trusted() == Root.TRUSTED && IPMatcher.match(exportClient.ip(), client)) {
-                    return true;
-                }
-            }
-
-        }
-
-        return false;
+        return isAllowed(client) && _client.trusted() == Root.TRUSTED;
     }
 
-    public List<String> client() {
-        List<String> client = new ArrayList<String>(_clients.size());
-
-        for (ExportClient exportClient : _clients) {
-            client.add(exportClient.ip());
-        }
-
-        return client;
+    public String client() {
+        return _client.ip();
     }
 }
