@@ -27,8 +27,8 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.dcache.chimera.nfs.ExportClient.IO;
-import org.dcache.chimera.nfs.ExportClient.Root;
+import org.dcache.chimera.nfs.FsExport.IO;
+import org.dcache.chimera.nfs.FsExport.Root;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
@@ -84,30 +84,28 @@ public class ExportFile {
                         StringTokenizer optionsTokenizer = new StringTokenizer(hostAndOptions, "(),");
 
                         String host = optionsTokenizer.nextToken();
-                        Root isTrusted = ExportClient.Root.NOTTRUSTED;
-                        IO rw = ExportClient.IO.RO;
+                        Root isTrusted = Root.NOTTRUSTED;
+                        IO rw = IO.RO;
                         while(optionsTokenizer.hasMoreTokens()) {
 
                             String option = optionsTokenizer.nextToken();
                             if( option.equals("rw") ) {
-                                rw = ExportClient.IO.RW;
+                                rw = IO.RW;
                                 continue;
                             }
 
                             if( option.equals("no_root_squash") ) {
-                                isTrusted = ExportClient.Root.TRUSTED;
+                                isTrusted = Root.TRUSTED;
                                 continue;
                             }
 
                         }
 
-                        ExportClient client = new ExportClient(host,isTrusted, rw );
-                        exports.add(new FsExport(path, client));
+                        exports.add(new FsExport(path, host,isTrusted, rw ));
                     }
 
                 }else{
-                    ExportClient everyOne = new ExportClient("*",ExportClient.Root.NOTTRUSTED, ExportClient.IO.RO );
-                    exports.add( new FsExport(path, everyOne ) );
+                    exports.add( new FsExport(path, "*", Root.NOTTRUSTED, IO.RO ) );
                 }
 
             }

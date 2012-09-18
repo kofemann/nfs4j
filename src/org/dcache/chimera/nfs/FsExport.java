@@ -20,12 +20,21 @@
 package org.dcache.chimera.nfs;
 
 import java.net.InetAddress;
-import org.dcache.chimera.nfs.ExportClient.Root;
 
 public class FsExport {
 
+    public enum Root {
+        TRUSTED, NOTTRUSTED
+    }
+
+    public enum IO {
+        RW, RO
+    }
+
     private final String _path;
-    private final ExportClient _client;
+    private final String _client;
+    private final Root _isTrusted;
+    private final IO _rw;
 
     /**
      * NFS clients may be specified in a number of ways:<br>
@@ -61,13 +70,15 @@ public class FsExport {
      *
      *
      * @param path
-     * @param clients list of {@link ExportClient} which allowed to mount this export.
+     * @param client hosts identifier which allowed to mount this export.
+     * @param isTrusted root squash option
+     * @param rw IO mode option
      */
-    public FsExport(String path, ExportClient client) {
-
+    public FsExport(String path, String client, Root isTrusted, IO rw) {
         _path = path;
         _client = client;
-
+        _isTrusted = isTrusted;
+        _rw = rw;
     }
 
     public String getPath() {
@@ -78,10 +89,13 @@ public class FsExport {
     public String toString() {
 
         StringBuilder sb = new StringBuilder();
-        sb.append(_path).append(":");
-
-        sb.append(" ").append(_client.ip()).append("(").append(
-                _client.io()).append(",").append(_client.trusted())
+        sb.append(_path)
+                .append(":")
+                .append(" ")
+                .append(_client)
+                .append("(").append(_rw)
+                .append(",")
+                .append(_isTrusted)
                 .append(")");
 
         return sb.toString();
@@ -91,16 +105,16 @@ public class FsExport {
     public boolean isAllowed(InetAddress client) {
 
         // localhost always allowed
-        return client.isLoopbackAddress() || IPMatcher.match(_client.ip(), client);
+        return client.isLoopbackAddress() || IPMatcher.match(_client, client);
     }
 
     public boolean isTrusted(InetAddress client) {
 
         // localhost always allowed
-        return isAllowed(client) && _client.trusted() == Root.TRUSTED;
+        return isAllowed(client) && _isTrusted == Root.TRUSTED;
     }
 
     public String client() {
-        return _client.ip();
+        return _client;
     }
 }
