@@ -122,7 +122,7 @@ public class PseudoFs implements VirtualFileSystem {
 
     @Override
     public Inode parentOf(Inode inode) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return _inner.parentOf(inode);
     }
 
     @Override
