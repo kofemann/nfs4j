@@ -76,8 +76,13 @@ public class PseudoFs implements VirtualFileSystem {
     }
 
     @Override
-    public Inode inodeOf(byte[] fh) throws IOException {
-        return _inner.inodeOf(fh);
+    public Inode getInodeById(byte[] fh) throws IOException {
+        return _inner.getInodeById(fh);
+    }
+
+    @Override
+    public byte[] getInodeId(Inode inode) throws IOException {
+        return _inner.getInodeId(inode);
     }
 
     @Override
