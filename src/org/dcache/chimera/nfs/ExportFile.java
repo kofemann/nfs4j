@@ -62,10 +62,7 @@ public class ExportFile {
 
         String line;
         try {
-            int lineCount = 0;
             while ((line = br.readLine()) != null) {
-
-                ++lineCount;
 
                 line = line.trim();
                 if (line.length() == 0)
