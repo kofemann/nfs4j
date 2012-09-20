@@ -56,7 +56,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
         int type = _args.opcreate.objtype.type;
         Inode inode = null;
 
-        Stat stat = context.getFs().getattr(inode);
+        Stat stat = context.getFs().getattr(context.currentInode());
         String name = NameFilter.convert(_args.opcreate.objname.value.value.value);
 
         if (name.length() == 0) {
