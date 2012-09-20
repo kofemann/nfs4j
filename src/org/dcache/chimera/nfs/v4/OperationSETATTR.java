@@ -132,11 +132,11 @@ public class OperationSETATTR extends AbstractNFSv4Operation {
 
             case nfs4_prot.FATTR4_SIZE :
 
-            	if( inode.type() == Inode.Type.DIRECTORY ) {
+            	if( stat.type() == Stat.Type.DIRECTORY ) {
                     throw new ChimeraNFSException(nfsstat.NFSERR_ISDIR, "path is a directory");
             	}
 
-            	if( inode.type() == Inode.Type.SYMLINK ) {
+            	if( stat.type() == Stat.Type.SYMLINK ) {
                     throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "path is a symbolic link");
             	}
 
