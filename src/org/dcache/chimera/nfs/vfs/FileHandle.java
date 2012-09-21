@@ -25,15 +25,15 @@ import org.dcache.utils.Bytes;
  *   byte fh_version;      // file handle format version number; version 1 description
  *   byte[3] fh_magic      // 0xcaffee 
  *   uint32 fh_generation; // server boot time or 0 for permanent handles 
- *   byte export_index;    // index into export table
+ *   uint32 export_index;    // index into export table
  *   byte fh_type          // 1 if pseudo fs
  *   byte fh_olen;         // length of opaque data
- *   byte[] fh_opaque;     // FS specific opaque data <= 117
+ *   byte[] fh_opaque;     // FS specific opaque data <= 114
  * </pre>
 */
 public class FileHandle {
 
-    private final static int MIN_LEN = 11;
+    private final static int MIN_LEN = 14;
     private final static int VERSION = 1;
     private final static int MAGIC = 0xCAFFEE;
     private final static byte[] EMPTY_FH = new byte[0];
@@ -41,15 +41,15 @@ public class FileHandle {
     private final int version;
     private final int magic;
     private final int generation;
-    private final int export_idx;
+    private final int exportIdx;
     private final int type;
     private final byte[] fs_opaque;
 
-    public FileHandle(int generation, int auth_flavior, int type, byte[] fs_opaque) {
+    public FileHandle(int generation, int exportIdx, int type, byte[] fs_opaque) {
         this.version = VERSION;
         this.magic = MAGIC;
         this.generation = generation;
-        this.export_idx = auth_flavior;
+        this.exportIdx = exportIdx;
         this.type = type;
         this.fs_opaque = fs_opaque;
     }
@@ -72,11 +72,11 @@ public class FileHandle {
         }
 
         generation = Bytes.getInt(bytes, 4);
-        export_idx = (int) bytes[8];
-        type = (int) bytes[9];
-        int olen = (int) bytes[10];
+        exportIdx = Bytes.getInt(bytes, 8);
+        type = (int) bytes[12];
+        int olen = (int) bytes[13];
         fs_opaque = new byte[olen];
-        System.arraycopy(bytes, 11, fs_opaque, 0, olen);
+        System.arraycopy(bytes, 14, fs_opaque, 0, olen);
     }
 
     public int getVersion() {
@@ -92,7 +92,7 @@ public class FileHandle {
     }
 
     public int getExportIdx() {
-        return export_idx;
+        return exportIdx;
     }
 
     public int getType() {
@@ -109,10 +109,10 @@ public class FileHandle {
 
         Bytes.putInt(bytes, 0, version << 24 | magic);
         Bytes.putInt(bytes, 4, generation);
-        bytes[8] = (byte) export_idx;
-        bytes[9] = (byte) type;
-        bytes[10] = (byte) fs_opaque.length;
-        System.arraycopy(fs_opaque, 0, bytes, 11, fs_opaque.length);
+        Bytes.putInt(bytes, 8, exportIdx);
+        bytes[12] = (byte) type;
+        bytes[13] = (byte) fs_opaque.length;
+        System.arraycopy(fs_opaque, 0, bytes, 14, fs_opaque.length);
         return bytes;
     }
 
