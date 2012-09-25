@@ -201,7 +201,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
         XdrAble ret = null;
         FsStat fsStat = null;
-        Stat stat = context.getFs().getattr(context.currentInode());
+        Stat stat = context.getFs().getattr(inode);
 
         switch(fattr) {
 
