@@ -16,7 +16,8 @@
  */
 package org.dcache.chimera.nfs.vfs;
 
-import org.dcache.utils.Bytes;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * NFS file handle on wire representation format v1.
@@ -60,7 +61,10 @@ public class FileHandle {
             throw new IllegalArgumentException("too short");
         }
 
-        int magic_version = Bytes.getInt(bytes, 0);
+        ByteBuffer b = ByteBuffer.wrap(bytes);
+        b.order(ByteOrder.BIG_ENDIAN);
+
+        int magic_version = b.getInt();
         version = (magic_version & 0xFF000000) >>> 24;
         if (version != VERSION) {
             throw new IllegalArgumentException("Unsupported version: " + version);
@@ -71,12 +75,12 @@ public class FileHandle {
             throw new IllegalArgumentException("Bad magic number");
         }
 
-        generation = Bytes.getInt(bytes, 4);
-        exportIdx = Bytes.getInt(bytes, 8);
-        type = (int) bytes[12];
-        int olen = (int) bytes[13];
+        generation = b.getInt();
+        exportIdx = b.getInt();
+        type = (int) b.get();
+        int olen = (int) b.get();
         fs_opaque = new byte[olen];
-        System.arraycopy(bytes, 14, fs_opaque, 0, olen);
+        b.get(fs_opaque);
     }
 
     public int getVersion() {
@@ -106,13 +110,15 @@ public class FileHandle {
     public byte[] bytes() {
         int len = fs_opaque.length + MIN_LEN;
         byte[] bytes = new byte[len];
+        ByteBuffer b = ByteBuffer.wrap(bytes);
+        b.order(ByteOrder.BIG_ENDIAN);
 
-        Bytes.putInt(bytes, 0, version << 24 | magic);
-        Bytes.putInt(bytes, 4, generation);
-        Bytes.putInt(bytes, 8, exportIdx);
-        bytes[12] = (byte) type;
-        bytes[13] = (byte) fs_opaque.length;
-        System.arraycopy(fs_opaque, 0, bytes, 14, fs_opaque.length);
+        b.putInt(version << 24 | magic);
+        b.putInt(generation);
+        b.putInt(exportIdx);
+        b.put((byte) type);
+        b.put((byte) fs_opaque.length);
+        b.put(fs_opaque);
         return bytes;
     }
 
