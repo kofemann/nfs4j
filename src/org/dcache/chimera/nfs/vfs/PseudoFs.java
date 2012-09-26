@@ -55,6 +55,14 @@ public class PseudoFs implements VirtualFileSystem {
     private final VirtualFileSystem _inner;
     private final ExportFile _exportFile;
 
+    private final static int WANT_MODITY = ACE4_WRITE_ACL
+            | ACE4_WRITE_ATTRIBUTES
+            | ACE4_WRITE_DATA
+            | ACE4_ADD_FILE
+            | ACE4_DELETE_CHILD
+            | ACE4_DELETE
+            | ACE4_ADD_SUBDIRECTORY;
+
     public PseudoFs(VirtualFileSystem inner, RpcCall call, ExportFile exportFile) {
         _inner = inner;
         _subject = call.getCredential().getSubject();
@@ -107,7 +115,7 @@ public class PseudoFs implements VirtualFileSystem {
     @Override
     public List<DirectoryEntry> list(Inode inode) throws IOException {
         checkAccess(inode, ACE4_LIST_DIRECTORY);
-        if (inode.isPesudoInode()) 
+        if (inode.isPesudoInode())
             return listPseudoDirectory(inode);
         return _inner.list(inode);
     }
@@ -148,7 +156,7 @@ public class PseudoFs implements VirtualFileSystem {
             checkAccess(parent, ACE4_DELETE_CHILD);
         } catch (ChimeraNFSException e) {
             if (e.getStatus() == nfsstat.NFSERR_ACCESS) {
-                Inode inode = _inner.lookup(parent, path);
+                Inode inode = pushExportIndex(parent, _inner.lookup(parent, path));
                 checkAccess(inode, ACE4_DELETE);
             } else {
                 throw e;
@@ -193,12 +201,35 @@ public class PseudoFs implements VirtualFileSystem {
         _inner.setAcl(inode, acl);
     }
 
+    private boolean wantModify(int requestMask) {
+        return (requestMask & WANT_MODITY) != 0;
+    }
+
     private void checkAccess(Inode inode, int requestedMask) throws IOException {
         Stat stat = _inner.getattr(inode);
 
+        if (inode.isPesudoInode() && wantModify(requestedMask)) {
+            _log.warn("Access Deny: pseudo Inode {} {} {}", new Object[]{inode, requestedMask, _subject});
+            throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");
+        }
+
+        if (!inode.isPesudoInode()) {
+            int exportIdx = inode.exportIndex();
+            FsExport export = _exportFile.getExport(exportIdx, _inetAddress);
+            if (exportIdx != 0 && export == null) {
+                _log.warn("Access Deny to inode {} for client {}", new Object[]{inode, _inetAddress});
+                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");
+            }
+
+            if ( (export.ioMode() == FsExport.IO.RO) && wantModify(requestedMask)) {
+                _log.warn("Access Deny to modify (RO export) inode {} for client {}", new Object[]{inode, _inetAddress});
+                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");
+            }
+        }
+
         int unixAccessmask = unixToAccessmask(_subject, stat);
         if ( (unixAccessmask & requestedMask) != requestedMask) {
-            _log.warn("Access Deny1: {} {} {} {}", new Object[] {inode, requestedMask, unixAccessmask, _subject});
+            _log.warn("Access Deny: {} {} {} {}", new Object[] {inode, requestedMask, unixAccessmask, _subject});
             throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");
         }
     }
