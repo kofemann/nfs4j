@@ -115,7 +115,7 @@ public class PseudoFs implements VirtualFileSystem {
     @Override
     public List<DirectoryEntry> list(Inode inode) throws IOException {
         checkAccess(inode, ACE4_LIST_DIRECTORY);
-        if (inode.isPesudoInode()) 
+        if (inode.isPesudoInode())
             return listPseudoDirectory(inode);
         return _inner.list(inode);
     }
@@ -210,7 +210,7 @@ public class PseudoFs implements VirtualFileSystem {
 
         if (inode.isPesudoInode() && wantModify(requestedMask)) {
             _log.warn("Access Deny: pseudo Inode {} {} {}", new Object[]{inode, requestedMask, _subject});
-            throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");            
+            throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");
         }
 
         if (!inode.isPesudoInode()) {
@@ -218,7 +218,7 @@ public class PseudoFs implements VirtualFileSystem {
             FsExport export = _exportFile.getExport(exportIdx, _inetAddress);
             if (exportIdx != 0 && export == null) {
                 _log.warn("Access Deny to inode {} for client {}", new Object[]{inode, _inetAddress});
-                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");                            
+                throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "permission deny");
             }
 
             if ( (export.ioMode() == FsExport.IO.RO) && wantModify(requestedMask)) {
