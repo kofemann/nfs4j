@@ -200,7 +200,7 @@ public class Acls {
         nfsace4[] newAcl = new nfsace4[acl.length];
         int i = 0;
         for(nfsace4 ace: acl) {
-            if( !isUnixUser(ace.who) ) {
+            if( !isSpecialPrincipal(ace.who) ) {
                 newAcl[i] = ace;
                 i++;
             }
@@ -289,7 +289,7 @@ public class Acls {
         return compact;
     }
 
-    private static boolean isUnixUser(utf8str_mixed who) {
+    private static boolean isSpecialPrincipal(utf8str_mixed who) {
         String w = who.toString();
         return w.charAt(w.length() -1) == '@';
     }
