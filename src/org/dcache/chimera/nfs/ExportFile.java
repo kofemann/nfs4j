@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
