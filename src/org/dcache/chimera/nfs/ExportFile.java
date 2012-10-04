@@ -91,7 +91,7 @@ public class ExportFile {
 
                     String host = optionsTokenizer.nextToken();
                     if (!isValidHostSpecifier(host))
-                        break;
+                        continue;
 
                     exportBuilder.forClient(host);
                     while (optionsTokenizer.hasMoreTokens()) {
@@ -127,10 +127,10 @@ public class ExportFile {
                             continue;
                         }
                     }
+                    FsExport export = exportBuilder.build(path);
+                    exports.add(export);
                 }
-                
-                FsExport export = exportBuilder.build(path);
-                exports.add(export);
+
             }
         } finally {
             try {
