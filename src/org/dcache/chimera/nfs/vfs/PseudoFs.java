@@ -520,7 +520,6 @@ public class PseudoFs implements VirtualFileSystem {
             throw new ChimeraNFSException(nfsstat.NFSERR_ACCESS, "");
         }
 
-        _log.warn("exports: {}", exports);
         Set<PseudoFsNode> nodes = new HashSet<PseudoFsNode>();
         Inode rootInode = realToPseudo(_inner.getRootInode());
         PseudoFsNode root = new PseudoFsNode(rootInode);
