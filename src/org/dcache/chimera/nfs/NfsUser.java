@@ -53,7 +53,7 @@ public class NfsUser {
 
         Subject subject = call.getCredential().getSubject();
         
-        if (subject == Subjects.NOBODY ) {
+        if (subject == Subjects.NOBODY || subject.getPrincipals().isEmpty()) {
             subject = NFS_NOBODY;
         }
 
