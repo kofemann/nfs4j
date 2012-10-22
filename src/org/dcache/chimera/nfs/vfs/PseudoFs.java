@@ -249,9 +249,6 @@ public class PseudoFs implements VirtualFileSystem {
     private static final int BIT_MASK_OWNER_OFFSET = 6;
     private static final int BIT_MASK_GROUP_OFFSET = 3;
     private static final int BIT_MASK_OTHER_OFFSET = 0;
-    static public final int RBIT = 04; // read bit
-    static public final int WBIT = 02; // write bit
-    static public final int XBIT = 01; //execute bit
 
     @SuppressWarnings("PointlessBitwiseExpression")
     private int unixToAccessmask(Subject subject, Stat stat) {
