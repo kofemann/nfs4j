@@ -41,6 +41,7 @@ import java.util.List;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.vfs.PseudoFs;
 import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
+import org.dcache.commons.stats.RequestExecutionTimeGauges;
 
 public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
@@ -51,6 +52,9 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
     private final NFSv41DeviceManager _deviceManager;
     private final NFSv4StateHandler _statHandler = new NFSv4StateHandler();
     private final NfsIdMapping _idMapping;
+
+    private static final RequestExecutionTimeGauges<String> GAUGES =
+            new RequestExecutionTimeGauges<String>(NFSServerV41.class.getName());
 
     public NFSServerV41(NFSv4OperationFactory operationFactory,
             NFSv41DeviceManager deviceManager, VirtualFileSystem fs,
@@ -125,7 +129,10 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                             }
                         }
                     }
+                    long t0 = System.nanoTime();
                     _operationFactory.getOperation(op).process(context, opResult);
+                    GAUGES.update(nfs_opnum4.toString(op.argop), System.nanoTime() - t0);
+
                 } catch (ChimeraNFSException e) {
                     opResult.setStatus(e.getStatus());
                 } catch (OncRpcException e) {
@@ -221,5 +228,9 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
     private static int statusOfLastOperation(List<nfs_resop4> ops) {
         return ops.get(ops.size() -1).getStatus();
+    }
+
+    public RequestExecutionTimeGauges<String> getStatistics() {
+        return GAUGES;
     }
 }
