@@ -121,7 +121,7 @@ public class Cache<K, V> extends  TimerTask {
     /**
      * 'Expire threads' used to detect and remove expired entries.
      */
-    private final Timer _cleaner = new Timer();
+    private final Timer _cleaner = new Timer("CacheSweeper-");
 
     /**
      * Internal storage access lock.
@@ -152,7 +152,8 @@ public class Cache<K, V> extends  TimerTask {
      * @param entryIdleTime maximal idle time in milliseconds.
      */
     public Cache(String name, int size, long entryLifeTime, long entryIdleTime) {
-        this(name, size, entryLifeTime, entryIdleTime,
+        this(name, size, entryLifeTime, TimeUnit.MILLISECONDS,
+                entryIdleTime, TimeUnit.MILLISECONDS,
                 new NopCacheEventListener<K, V>(),
                 30, TimeUnit.SECONDS);
     }
@@ -162,19 +163,22 @@ public class Cache<K, V> extends  TimerTask {
      *
      * @param name Unique id for this cache.
      * @param size maximal number of elements.
-     * @param entryLifeTime maximal time in milliseconds.
+     * @param entryLifeTime maximal time entry can stay in cache.
+     * @param lifeTimeUnit the unit that {@code entryLifeTime} is expressed in
      * @param entryIdleTime maximal idle time in milliseconds.
+     * @param lifeTimeUnit the unit that {@code entryIdleTime} is expressed in
      * @param eventListener {@link CacheEventListener}
      * @param timeValue how oftem cleaner thread have to check for invalidated entries.
      * @param timeUnit a {@link TimeUnit} determining how to interpret the
      * <code>timeValue</code> parameter.
      */
-    public Cache(String name, int size, long entryLifeTime, long entryIdleTime,
+    public Cache(String name, int size, long entryLifeTime, TimeUnit lifeTimeUnit,
+            long entryIdleTime, TimeUnit idleTimeUnit,
             CacheEventListener<K, V> eventListener, long timeValue, TimeUnit timeUnit) {
         _name = name;
         _size = size;
-        _defaultEntryMaxLifeTime = entryLifeTime;
-        _defaultEntryIdleTime = entryIdleTime;
+        _defaultEntryMaxLifeTime = lifeTimeUnit.toMillis(entryLifeTime);
+        _defaultEntryIdleTime = idleTimeUnit.toMillis(entryIdleTime);
         _storage = new HashMap<K, CacheElement<V>>(_size);
         _eventListener = eventListener;
         _mxBean = new CacheMXBeanImpl<K, V>(this);
@@ -207,7 +211,7 @@ public class Cache<K, V> extends  TimerTask {
      * @param k key associated with the value.
      * @param v value associated with key.
      * @param entryMaxLifeTime maximal life time in milliseconds.
-     * @param entryIdleTime maximal idel time in milliseconds.
+     * @param entryIdleTime maximal idle time in milliseconds.
      *
      * @throws MissingResourceException if Cache limit is reached.
      */

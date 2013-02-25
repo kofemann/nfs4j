@@ -54,8 +54,8 @@ public class NFSv4StateHandler {
 
     private final Cache<sessionid4, NFSv41Session> _sessionById =
             new Cache<sessionid4, NFSv41Session>("NFSv41 sessions",
-            5000, Long.MAX_VALUE,
-            TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME * 2),
+            5000, Long.MAX_VALUE, TimeUnit.MILLISECONDS,
+            NFSv4Defaults.NFS4_LEASE_TIME * 2, TimeUnit.SECONDS,
             new DeadSessionCleaner(),
             30, TimeUnit.SECONDS);
 
