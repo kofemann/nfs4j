@@ -88,6 +88,11 @@
         </constructor-arg>
     </bean>
 
+    <bean id="export-init" class="org.dcache.nfs.ExportPathCreator" init-method="init">
+        <property name="exportFile" ref="export"/>
+        <property name="vfs" ref="vfs-intern"/>
+    </bean>
+
     <!--
         NFSv4.1 Operation factory
     -->
@@ -125,7 +130,8 @@
     <!--
        NFSv4.1 MDS
     -->
-    <bean id="mds" class="org.dcache.nfs.v4.NFSServerV41">
+
+    <bean id="mds" class="org.dcache.nfs.v4.NFSServerV41" depends-on="export-init">
         <description>NFSv4.1 MDS server</description>
         <constructor-arg ref="mds-factory"/>
         <constructor-arg ref="device-manager" />
@@ -204,6 +210,7 @@
                 <entry key-ref="mount-programm" value-ref="mountd"/>
             </map>
         </property>
+        <property name="gssSessionManager" ref="rpcsec_gss" />
     </bean>
 
     <!--
@@ -218,6 +225,23 @@
                 <entry key-ref="nfsv4-programm" value-ref="ds"/>
             </map>
         </property>
+        <property name="gssSessionManager" ref="rpcsec_gss_ds" />
+    </bean>
+
+    <bean id="gssuser" class="org.dcache.utils.RpcLogin" />
+
+    <bean id="rpcsec_gss" class="org.dcache.xdr.gss.GssSessionManager" >
+        <description>
+            GSS context manager for MDS
+        </description>
+        <constructor-arg ref="gssuser" />
+    </bean>
+
+    <bean id="rpcsec_gss_ds" class="org.dcache.xdr.gss.GssSessionManager" >
+        <description>
+            GSS context manager for DS
+        </description>
+        <constructor-arg ref="gssuser" />
     </bean>
 
 </beans>
