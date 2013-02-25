@@ -88,6 +88,11 @@
         </constructor-arg>
     </bean>
 
+    <bean id="export-init" class="org.dcache.chimera.nfs.ExportPathCreator" init-method="init">
+        <property name="exportFile" ref="export"/>
+        <property name="vfs" ref="vfs-intern"/>
+    </bean>
+
     <!--
         NFSv4.1 Operation factory
     -->
@@ -125,7 +130,7 @@
     <!--
        NFSv4.1 MDS
     -->
-    <bean id="mds" class="org.dcache.chimera.nfs.v4.NFSServerV41">
+    <bean id="mds" class="org.dcache.chimera.nfs.v4.NFSServerV41" depends-on="export-init">
         <description>NFSv4.1 MDS server</description>
         <constructor-arg ref="mds-factory"/>
         <constructor-arg ref="device-manager" />
