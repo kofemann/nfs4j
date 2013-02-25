@@ -161,7 +161,7 @@ public class NFSv4StateHandler {
         /*
          * remove client if there is not sessions any more
          */
-        if (client.sessions().isEmpty()) {
+        if (!client.hasSessions()) {
             removeClient(client);
         }
     }
