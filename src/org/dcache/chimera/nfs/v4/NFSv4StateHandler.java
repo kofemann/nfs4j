@@ -84,6 +84,7 @@ public class NFSv4StateHandler {
         _clientByOwner.remove(client.getOwner());
         _clientsByVerifier.remove(client.verifier()) ;
         _clients.remove(client);
+        client.dispose();
     }
 
     private synchronized void addClient(NFS4Client newClient) {

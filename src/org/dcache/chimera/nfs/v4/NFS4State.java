@@ -77,4 +77,11 @@ public class NFS4State {
     public boolean isConfimed() {
     	return _isConfimed;
     }
+
+    /**
+     * Notify state that the allocated resources are not needed any more.
+     */
+    public void dispose() {
+        // NOP
+    }
 }

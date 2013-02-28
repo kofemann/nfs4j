@@ -351,4 +351,21 @@ public class NFS4Client {
     public boolean hasState() {
         return !_clientStates.isEmpty();
     }
+
+    /**
+     * Bind a state to the client.
+     * @param state to bind
+     */
+    public void bindState(NFS4State state) {
+        _clientStates.put(state.stateid(), state);
+    }
+
+    /**
+     * Notify client that the allocated resources are not needed any more.
+     */
+    public void dispose() {
+       for(NFS4State state: _clientStates.values()) {
+           state.dispose();
+       }
+    }
 }
