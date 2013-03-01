@@ -361,6 +361,16 @@ public class NFS4Client {
     }
 
     /**
+     * Remove {@code state} from the list of stated held by client.
+     * The {@code NFS4State.dispose()} will be called.
+     * @param state to remove
+     */
+    public void removeState(NFS4State state) {
+        _clientStates.remove(state.stateid());
+        state.dispose();
+    }
+
+    /**
      * Notify client that the allocated resources are not needed any more.
      */
     public void dispose() {
