@@ -18,6 +18,7 @@ package org.dcache.chimera.nfs.vfs;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.dcache.utils.Bytes;
 
 /**
  * NFS file handle on wire representation format v1.
@@ -124,14 +125,7 @@ public class FileHandle {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for(byte b: bytes()) {
-            int i = b&0xFF;
-            if ( i < 0x10)
-                sb.append('0');
-            sb.append(Integer.toHexString(i));
-        }
-        return sb.toString();
+        return Bytes.toHexString(this.bytes());
     }
 
     public static class FileHandleBuilder {
