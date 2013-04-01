@@ -106,8 +106,8 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
                             _log.debug("Creating a new file: {}", name);
                             inode = context.getFs().create(context.currentInode(), Stat.Type.REGULAR,
-                                    name, context.getUser().getUID(),
-                                    context.getUser().getGID(), 0600);
+                                    name, context.getUser().getUid(),
+                                    context.getUser().getGid(), 0600);
 
                             // FIXME: proper implementation required
                             switch (_args.opopen.openhow.how.mode) {

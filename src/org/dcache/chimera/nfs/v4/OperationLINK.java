@@ -46,7 +46,7 @@ public class OperationLINK extends AbstractNFSv4Operation {
         String newName = NameFilter.convert(_args.oplink.newname.value.value.value);
 
         context.getFs().link(context.currentInode(), context.savedInode(), newName,
-                context.getUser().getUID(), context.getUser().getGID());
+                context.getUser().getUid(), context.getUser().getGid());
 
         result.oplink.resok4 = new LINK4resok();
         result.oplink.resok4.cinfo = new change_info4();

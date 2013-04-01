@@ -20,12 +20,9 @@
 package org.dcache.chimera.nfs.v4;
 
 import java.security.Principal;
-import org.dcache.chimera.nfs.ChimeraNFSException;
-import org.dcache.chimera.nfs.ExportFile;
+
+import org.dcache.chimera.nfs.*;
 import org.dcache.chimera.nfs.v4.xdr.nfs_resop4;
-import org.dcache.chimera.nfs.nfsstat;
-import org.dcache.chimera.posix.AclHandler;
-import org.dcache.chimera.posix.UnixUser;
 import org.dcache.xdr.RpcCall;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +31,6 @@ import java.util.List;
 import java.util.Set;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.chimera.nfs.vfs.Inode;
-import org.dcache.chimera.nfs.NfsUser;
 import org.dcache.chimera.nfs.v4.xdr.server_owner4;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
 import org.dcache.chimera.nfs.v4.xdr.uint64_t;
@@ -77,7 +73,7 @@ public class CompoundContext {
 
     private final VirtualFileSystem _fs;
     private final RpcCall _callInfo;
-    private final UnixUser _user;
+    private final UnixSubject _user;
     private final ExportFile _exportFile;
     private final NFSv41DeviceManager _deviceManager;
     private final NFSv4StateHandler _stateHandler;
@@ -119,7 +115,7 @@ public class CompoundContext {
     public RpcCall getRpcCall() {
         return _callInfo;
     }
-    public UnixUser getUser() {
+    public UnixSubject getUser() {
         return _user;
     }
 

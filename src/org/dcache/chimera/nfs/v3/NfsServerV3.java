@@ -140,7 +140,6 @@ import org.dcache.chimera.nfs.v3.xdr.RENAME3resfail;
 import org.dcache.chimera.nfs.vfs.DirectoryEntry;
 import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
 import org.dcache.chimera.nfs.vfs.Stat;
-import org.dcache.chimera.posix.UnixUser;
 import org.dcache.utils.Bytes;
 import org.dcache.xdr.OncRpcException;
 import org.dcache.xdr.RpcCall;
@@ -183,7 +182,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
         ACCESS3res res = new ACCESS3res();
 
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request ACCESS uid: {}", user);
 
         try {
@@ -237,7 +236,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public CREATE3res NFSPROC3_CREATE_3(RpcCall call$, CREATE3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request CREATE3 uid: {}", user);
 
         CREATE3res res = new CREATE3res();
@@ -273,7 +272,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             if (newAttr != null) {
                 fmode = newAttr.mode.mode.value.value | UnixPermission.S_IFREG;
             }
-            inode = fs.create(parent, Stat.Type.REGULAR, path, user.getUID(), user.getGID(), fmode);
+            inode = fs.create(parent, Stat.Type.REGULAR, path, user.getUid(), user.getGid(), fmode);
             Stat inodeStat = fs.getattr(inode);
 
 
@@ -329,7 +328,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public FSINFO3res NFSPROC3_FSINFO_3(RpcCall call$, FSINFO3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request FSINFO from: {}", user);
 
         FSINFO3res res = new FSINFO3res();
@@ -438,7 +437,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public GETATTR3res NFSPROC3_GETATTR_3(RpcCall call$, GETATTR3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request GETTATTR3 uid: {}", user);
 
         GETATTR3res res = new GETATTR3res();
@@ -471,7 +470,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public LINK3res NFSPROC3_LINK_3(RpcCall call$, LINK3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request LINK3 uid: {}", user);
 
 
@@ -496,7 +495,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             }
 
             Stat parentStat = fs.getattr(parent);
-            fs.link(parent, hlink, name, user.getUID(), user.getGID());
+            fs.link(parent, hlink, name, user.getUid(), user.getGid());
 
             res.resok = new LINK3resok();
             res.resok.file_attributes = new post_op_attr();
@@ -601,7 +600,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public MKDIR3res NFSPROC3_MKDIR_3(RpcCall call$, MKDIR3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request MKDIR3 uid: {}", user);
 
         MKDIR3res res = new MKDIR3res();
@@ -620,7 +619,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
 
             Inode inode;
             try {
-                inode = fs.mkdir(parent, name, user.getUID(), user.getGID(), mode);
+                inode = fs.mkdir(parent, name, user.getUid(), user.getGid(), mode);
             } catch (ChimeraFsException hfe) {
                 throw new ChimeraNFSException(nfsstat.NFSERR_EXIST, "Directory already exist.");
             }
@@ -757,7 +756,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public READDIRPLUS3res NFSPROC3_READDIRPLUS_3(RpcCall call$, READDIRPLUS3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request READDIRPLUS3 uid: {}", user);
 
         READDIRPLUS3res res = new READDIRPLUS3res();
@@ -898,7 +897,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public READDIR3res NFSPROC3_READDIR_3(RpcCall call$, READDIR3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request READDIR3 uid: {}", user);
 
         READDIR3res res = new READDIR3res();
@@ -1068,7 +1067,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             long offset = arg1.offset.value.value;
             int count = arg1.count.value.value;
 
-            UnixUser user = NfsUser.remoteUser(call$, _exports);
+            UnixSubject user = NfsUser.remoteUser(call$, _exports);
             Stat inodeStat = fs.getattr(inode);
 
             res.resok = new READ3resok();
@@ -1123,7 +1122,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public REMOVE3res NFSPROC3_REMOVE_3(RpcCall call$, REMOVE3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request REMOVE3 uid: {}", user);
 
         REMOVE3res res = new REMOVE3res();
@@ -1189,7 +1188,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public RENAME3res NFSPROC3_RENAME_3(RpcCall call$, RENAME3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request RENAME3 uid: {}", user);
 
         RENAME3res res = new RENAME3res();
@@ -1250,7 +1249,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public RMDIR3res NFSPROC3_RMDIR_3(RpcCall call$, RMDIR3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request RMDIR3 uid: {}", user);
 
         RMDIR3res res = new RMDIR3res();
@@ -1307,7 +1306,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public SETATTR3res NFSPROC3_SETATTR_3(RpcCall call$, SETATTR3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request SETATTR3 uid: {}", user);
 
         SETATTR3res res = new SETATTR3res();
@@ -1358,7 +1357,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
     public SYMLINK3res NFSPROC3_SYMLINK_3(RpcCall call$, SYMLINK3args arg1) {
 
         VirtualFileSystem fs = new PseudoFs(_vfs, call$, _exports);
-        UnixUser user = NfsUser.remoteUser(call$, _exports);
+        UnixSubject user = NfsUser.remoteUser(call$, _exports);
         _log.debug("NFS Request SYMLINK3 uid: {}", user);
 
         SYMLINK3res res = new SYMLINK3res();
@@ -1384,7 +1383,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             }
 
             Stat parentStat = fs.getattr(parent);
-            inode = fs.symlink(parent, file, link, user.getUID(), user.getGID(), 777);
+            inode = fs.symlink(parent, file, link, user.getUid(), user.getGid(), 777);
 
             HimeraNfsUtils.set_sattr(inode, fs, linkAttr);
 

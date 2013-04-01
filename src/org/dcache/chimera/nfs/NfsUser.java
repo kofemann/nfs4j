@@ -23,7 +23,6 @@ import com.google.common.collect.Sets;
 import java.util.Collections;
 import javax.security.auth.Subject;
 import org.dcache.auth.GidPrincipal;
-import org.dcache.chimera.posix.UnixUser;
 import org.dcache.xdr.RpcCall;
 import org.dcache.auth.Subjects;
 import org.dcache.auth.UidPrincipal;
@@ -44,9 +43,9 @@ public class NfsUser {
     private NfsUser() {
     }
 
-    public static UnixUser remoteUser(RpcCall call, ExportFile exports) {
+    public static UnixSubject remoteUser(RpcCall call, ExportFile exports) {
 
-        UnixUser user;
+        UnixSubject user;
         int uid;
         int gid;
         int[] gids;
@@ -61,8 +60,6 @@ public class NfsUser {
         gids = from(Subjects.getGids(subject));
         gid = gids.length > 0 ? gids[0] : NOBODY;
 
-        String host = call.getTransport().getRemoteSocketAddress().getAddress().getHostAddress();
-
         // root access only for trusted hosts
         if (uid == 0) {
             if ((exports == null) || !exports.isTrusted(
@@ -74,7 +71,7 @@ public class NfsUser {
             }
         }
 
-        user = new UnixUser(uid, gid, gids, host);
+        user = new UnixSubject(uid, gid, gids);
 
         return user;
     }
