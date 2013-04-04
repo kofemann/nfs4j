@@ -51,9 +51,4 @@ public interface NFSv4Defaults {
      */
     public final static String NFS4_IMPLEMENTATION_DOMAIN = "dCache.ORG";
 
-    /**
-     * NFSv4.1 implementation date
-     */
-    public final static long NFS4_IMPLEMENTATION_DATE = System.currentTimeMillis();
-
 }
