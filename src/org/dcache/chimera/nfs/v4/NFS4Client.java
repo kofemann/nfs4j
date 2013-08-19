@@ -116,7 +116,7 @@ public class NFS4Client {
     private int _sessionSequence = 1;
 
     // FIXME: we use cache as a work around problem with cleint doing a DoS
-    private Cache<stateid4, NFS4State> _clientStates = CacheBuilder.newBuilder()
+    private final Cache<stateid4, NFS4State> _clientStates = CacheBuilder.newBuilder()
             .maximumSize(16384)
             .build();
     /**
@@ -159,6 +159,8 @@ public class NFS4Client {
      * lease expiration time in milliseconds.
      */
     private final long _leaseTime;
+
+    private boolean _disposed;
 
     public NFS4Client(InetSocketAddress clientAddress, InetSocketAddress localAddress,
             byte[] ownerID, verifier4 verifier, Principal principal, long leaseTime) {
@@ -220,7 +222,7 @@ public class NFS4Client {
     }
 
     public boolean isLeaseValid() {
-        return (System.currentTimeMillis() - _cl_time) > _leaseTime;
+        return (System.currentTimeMillis() - _cl_time) < _leaseTime;
     }
 
     /**
@@ -352,8 +354,8 @@ public class NFS4Client {
         _sessions.remove(session.getSequence());
     }
 
-    public boolean sessionsEmpty(NFSv41Session session) {
-        return _sessions.isEmpty();
+    public boolean hasSession() {
+        return !_sessions.isEmpty();
     }
 
     public Principal principal() {
@@ -362,5 +364,43 @@ public class NFS4Client {
 
     public boolean hasState() {
         return _clientStates.size() > 0;
+    }
+
+    /**
+     * Attach the state to the client.
+     *
+     * @param state to attach
+     */
+    public void attachState(NFS4State state) {
+        _clientStates.put(state.stateid(), state);
+    }
+
+    /**
+     * Detach a state from the client.
+     *
+     * @param state to detach
+     */
+    public void detachState(NFS4State state) {
+        _clientStates.invalidate(state.stateid());
+    }
+
+    /**
+     * Release resources used by this client if not released yet. Any subsequent
+     * call will have no effect.
+     */
+    public final void tryDispose() {
+        if (!_disposed) {
+            dispose();
+            _disposed = true;
+        }
+    }
+
+    /**
+     * Release resources used by this client.
+     */
+    protected void dispose() {
+        for (NFS4State state : _clientStates.asMap().values()) {
+            state.tryDispose();
+        }
     }
 }

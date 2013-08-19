@@ -34,6 +34,7 @@ import org.dcache.chimera.nfs.v4.xdr.sessionid4;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 import org.dcache.utils.Cache;
 import org.dcache.utils.Bytes;
+import org.dcache.utils.NopCacheEventListener;
 import org.dcache.utils.Opaque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,10 @@ public class NFSv4StateHandler {
     private final Map<Long, NFS4Client> _clientsByServerId = new HashMap<Long, NFS4Client>();
 
     private final Cache<sessionid4, NFSv41Session> _sessionById =
-            new Cache<sessionid4, NFSv41Session>("NFSv41 sessions", 5000, Long.MAX_VALUE, TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME*2));
+            new Cache<sessionid4, NFSv41Session>("NFSv41 sessions", 5000, Long.MAX_VALUE,
+            TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME*2),
+            new DeadSessionCollector(),
+            NFSv4Defaults.NFS4_LEASE_TIME*4, TimeUnit.SECONDS);
 
     private final Map<Opaque, NFS4Client> _clientByOwner = new HashMap<Opaque, NFS4Client>();
 
@@ -79,6 +83,7 @@ public class NFSv4StateHandler {
         _clientByOwner.remove(client.getOwner());
         _clientsByVerifier.remove(client.verifier()) ;
         _clients.remove(client);
+        client.tryDispose();
     }
 
     private synchronized void addClient(NFS4Client newClient) {
@@ -90,7 +95,7 @@ public class NFSv4StateHandler {
 
     public synchronized NFS4Client getClientByID( Long id) throws ChimeraNFSException {
         NFS4Client client = _clientsByServerId.get(id);
-        if(client == null) {
+        if(client == null || !client.isLeaseValid()) {
             throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "bad client id.");
         }
         return client;
@@ -115,15 +120,7 @@ public class NFSv4StateHandler {
             throw new ChimeraNFSException(nfsstat.NFSERR_BADSESSION, "session not found");
         }
 
-        NFS4Client client = session.getClient();
-        client.removeSession(session);
-
-        /*
-         * remove client if there is not sessions any more
-         */
-        if (client.sessions().isEmpty()) {
-            removeClient(client);
-        }
+        detachSession(session);
         return session;
     }
 
@@ -156,5 +153,32 @@ public class NFSv4StateHandler {
         NFS4Client client = new NFS4Client(clientAddress, localAddress, ownerID, verifier, principal, _leaseTime);
         addClient(client);
         return client;
+    }
+
+    /**
+     * Detach session from the client. Removes client, if there are no sessions
+     * associated with client any more.
+     *
+     * @param session to detach.
+     */
+    private void detachSession(NFSv41Session session) {
+        NFS4Client client = session.getClient();
+        client.removeSession(session);
+
+        /*
+        * remove client if there is not sessions any more
+        */
+        if (!client.hasSession()) {
+            removeClient(client);
+        }
+    }
+
+    private class DeadSessionCollector extends NopCacheEventListener<sessionid4, NFSv41Session> {
+
+        @Override
+        public void notifyExpired(Cache<sessionid4, NFSv41Session> cache, NFSv41Session session) {
+            _log.info("Removing expired session: {}", session);
+            detachSession(session);
+        }
     }
 }
