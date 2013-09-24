@@ -19,8 +19,10 @@
  */
 package org.dcache.nfs.v4.ds;
 
+import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
@@ -43,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 public class DSOperationWRITE extends AbstractNFSv4Operation {
 
+    private final static DelayedReplyMXBean DELAY = new DelayedReplyMXBeanImpl("write");
     private static final Logger _log = LoggerFactory.getLogger(DSOperationWRITE.class);
     private final FsCache _fsCache;
 
@@ -81,5 +84,7 @@ public class DSOperationWRITE extends AbstractNFSv4Operation {
         }
         _log.debug("MOVER: {}@{} written, {} requested. New File size {}",
                 bytesWritten, offset, _args.opwrite.data, out.size());
+
+        Uninterruptibles.sleepUninterruptibly(DELAY.getDelay(), TimeUnit.SECONDS);
     }
 }

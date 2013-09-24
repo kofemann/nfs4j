@@ -19,9 +19,11 @@
  */
 package org.dcache.nfs.v4.ds;
 
+import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.concurrent.TimeUnit;
 
 import org.dcache.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.nfs.v4.CompoundContext;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 public class DSOperationREAD extends AbstractNFSv4Operation {
 
+    private final static DelayedReplyMXBean DELAY = new DelayedReplyMXBeanImpl("read");
     private static final Logger _log = LoggerFactory.getLogger(DSOperationREAD.class);
      private final FsCache _fsCache;
 
@@ -78,5 +81,7 @@ public class DSOperationREAD extends AbstractNFSv4Operation {
 
         _log.debug("MOVER: {}@{} readed, {} requested.",
                 bytesReaded, offset, _args.opread.count.value.value);
+
+        Uninterruptibles.sleepUninterruptibly(DELAY.getDelay(), TimeUnit.SECONDS);
     }
 }
