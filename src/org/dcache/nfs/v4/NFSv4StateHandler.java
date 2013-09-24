@@ -167,6 +167,8 @@ public class NFSv4StateHandler {
 
         /*
         * remove client if there is not sessions any more
+        * this behavior implicit allowed by
+        * http://tools.ietf.org/html/rfc5661#section-2.4.2
         */
         if (!client.hasSessions()) {
             removeClient(client);
