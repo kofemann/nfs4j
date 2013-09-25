@@ -21,8 +21,13 @@ package org.dcache.nfs.v4.xdr;
 import org.dcache.nfs.nfsstat;
 import org.dcache.xdr.*;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class nfs_resop4 implements XdrAble {
+
+    private final static Logger _log = LoggerFactory.getLogger(nfs_resop4.class);
+
     public int resop;
     public ACCESS4res opaccess;
     public CLOSE4res opclose;
@@ -980,6 +985,7 @@ public class nfs_resop4 implements XdrAble {
                 resop.opillegal = new ILLEGAL4res();
                 break;
             default:
+                _log.warn("Unsupported op: ", resop.resop);
                 resop.opillegal = new ILLEGAL4res();
         }
         return resop;
