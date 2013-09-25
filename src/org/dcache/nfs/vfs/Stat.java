@@ -19,6 +19,9 @@
  */
 package org.dcache.nfs.vfs;
 
+import com.google.common.base.Objects;
+import java.util.Date;
+
 public class Stat {
 
     public static final int S_TYPE = 0770000; // type mask
@@ -195,5 +198,18 @@ public class Stat {
             default:
                 return Type.REGULAR;
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper("stat")
+                .add("uid", _owner)
+                .add("gid", _group)
+                .add("mode", Integer.toOctalString(_mode & 0777))
+                .add("size", _size)
+                .add("atime", new Date(_atime))
+                .add("mtime", new Date(_mtime))
+                .add("ctime", new Date(_ctime))
+                .toString();
     }
 }
