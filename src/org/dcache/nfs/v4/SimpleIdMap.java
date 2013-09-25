@@ -23,6 +23,7 @@ import java.security.Principal;
 import javax.security.auth.Subject;
 import org.dcache.auth.Subjects;
 import org.dcache.nfs.NfsUser;
+import org.dcache.xdr.RpcLoginService;
 
 /**
  * Simple implementation of {@link NfsIdMapping} which converts number into
@@ -30,7 +31,7 @@ import org.dcache.nfs.NfsUser;
  *
  * @since 0.0.4
  */
-public class SimpleIdMap implements NfsIdMapping, NfsLoginService {
+public class SimpleIdMap implements NfsIdMapping, RpcLoginService {
 
     private static final int NOBODY_UID = NfsUser.NOBODY;
     private static final int NOBODY_GID = NfsUser.NOBODY;
