@@ -58,13 +58,12 @@ public class OperationOPEN extends AbstractNFSv4Operation {
     public void process(CompoundContext context, nfs_resop4 result) throws ChimeraNFSException, IOException, OncRpcException {
         final OPEN4res res = result.opopen;
 
-        try {
-            Long clientid = Long.valueOf(_args.opopen.owner.value.clientid.value.value);
+        try {            
             NFS4Client client;
-
             if (context.getMinorversion() > 0) {
                 client = context.getSession().getClient();
             } else {
+                Long clientid = Long.valueOf(_args.opopen.owner.value.clientid.value.value);
                 client = context.getStateHandler().getClientByID(clientid);
 
                 if (client == null || !client.isConfirmed()) {
