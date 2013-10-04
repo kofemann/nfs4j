@@ -217,7 +217,7 @@ public class NFS4Client {
     }
 
     public boolean isLeaseValid() {
-        return (System.currentTimeMillis() - _cl_time) > _leaseTime;
+        return (System.currentTimeMillis() - _cl_time) < _leaseTime;
     }
 
     /**

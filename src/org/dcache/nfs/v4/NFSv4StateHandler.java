@@ -95,7 +95,7 @@ public class NFSv4StateHandler {
 
     public synchronized NFS4Client getClientByID( Long id) throws ChimeraNFSException {
         NFS4Client client = _clientsByServerId.get(id);
-        if(client == null) {
+        if(client == null || !client.isLeaseValid()) {
             throw new ChimeraNFSException(nfsstat.NFSERR_STALE_CLIENTID, "bad client id.");
         }
         return client;
