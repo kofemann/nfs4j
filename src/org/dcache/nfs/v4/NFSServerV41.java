@@ -222,6 +222,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                 switch (opCode) {
                     case nfs_opnum4.OP_CREATE_SESSION:
                     case nfs_opnum4.OP_DESTROY_CLIENTID:
+                    case nfs_opnum4.OP_EXCHANGE_ID:
                         throw new ChimeraNFSException(nfsstat.NFSERR_NOT_ONLY_OP, "not only op");
                     default:
                     // NOP
