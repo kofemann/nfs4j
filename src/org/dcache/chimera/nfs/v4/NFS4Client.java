@@ -22,6 +22,8 @@ package org.dcache.chimera.nfs.v4;
 /**
  *  with great help of William A.(Andy) Adamson
  */
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
@@ -113,7 +115,10 @@ public class NFS4Client {
      */
     private int _sessionSequence = 1;
 
-    private Map<stateid4, NFS4State> _clientStates = new HashMap<stateid4, NFS4State>();
+    // FIXME: we use cache as a work around problem with cleint doing a DoS
+    private Cache<stateid4, NFS4State> _clientStates = CacheBuilder.newBuilder()
+            .maximumSize(16384)
+            .build();
     /**
      * sessions associated with the client
      */
@@ -228,7 +233,8 @@ public class NFS4Client {
 
         long curentTime = System.currentTimeMillis();
         if ((curentTime - _cl_time) > _leaseTime) {
-            _clientStates.clear();
+            _clientStates.invalidateAll();
+            _clientStates.cleanUp();
             throw new ChimeraNFSException(nfsstat.NFSERR_EXPIRED, "lease time expired");
         }
         _cl_time = curentTime;
@@ -269,7 +275,8 @@ public class NFS4Client {
     }
 
     public NFS4State releaseState(stateid4 stateid) throws ChimeraNFSException {
-        NFS4State state = _clientStates.remove(stateid);
+        NFS4State state = _clientStates.getIfPresent(stateid);
+        _clientStates.invalidate(stateid);
         if (state == null) {
             throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
                     "State not known to the client.");
@@ -278,7 +285,7 @@ public class NFS4Client {
     }
 
     public NFS4State state(stateid4 stateid) throws ChimeraNFSException {
-        NFS4State state = _clientStates.get(stateid);
+        NFS4State state = _clientStates.getIfPresent(stateid);
         if(state == null) {
             throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID,
                     "State not known to the client.");
@@ -354,6 +361,6 @@ public class NFS4Client {
     }
 
     public boolean hasState() {
-        return !_clientStates.isEmpty();
+        return _clientStates.size() > 0;
     }
 }
