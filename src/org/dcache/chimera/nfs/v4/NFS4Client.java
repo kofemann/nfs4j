@@ -363,7 +363,11 @@ public class NFS4Client {
     }
 
     public boolean hasState() {
-        return _clientStates.size() > 0;
+        return getStatesCount() > 0;
+    }
+
+    public int getStatesCount() {
+        return (int)_clientStates.size();
     }
 
     /**

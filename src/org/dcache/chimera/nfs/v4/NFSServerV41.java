@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.dcache.chimera.nfs.v4.jmx.StateManagerMXBeanImpl;
 import org.dcache.chimera.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.chimera.nfs.vfs.PseudoFs;
 import org.dcache.chimera.nfs.vfs.VirtualFileSystem;
@@ -65,6 +66,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         _exportFile = exportFile;
         _operationFactory = operationFactory;
         _idMapping = idMapping;
+        new StateManagerMXBeanImpl(_statHandler);
     }
 
     @Override
