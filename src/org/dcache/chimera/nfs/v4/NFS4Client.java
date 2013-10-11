@@ -24,6 +24,8 @@ package org.dcache.chimera.nfs.v4;
  */
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import org.dcache.chimera.nfs.ChimeraNFSException;
 import org.dcache.chimera.nfs.nfsstat;
 import org.dcache.chimera.nfs.v4.xdr.stateid4;
@@ -37,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.dcache.chimera.nfs.v4.xdr.verifier4;
 
 public class NFS4Client {
@@ -116,9 +119,7 @@ public class NFS4Client {
     private int _sessionSequence = 1;
 
     // FIXME: we use cache as a work around problem with cleint doing a DoS
-    private final Cache<stateid4, NFS4State> _clientStates = CacheBuilder.newBuilder()
-            .maximumSize(16384)
-            .build();
+    private final Cache<stateid4, NFS4State> _clientStates;
     /**
      * sessions associated with the client
      */
@@ -175,6 +176,20 @@ public class NFS4Client {
         _leaseTime = leaseTime;
         _log.debug("New client id: {}", Long.toHexString(_clientId));
 
+        _clientStates = CacheBuilder.newBuilder()
+                .maximumSize(16384)
+                .removalListener(
+                    new RemovalListener<stateid4, NFS4State>() {
+                        private final AtomicLong logCount = new AtomicLong();
+                        @Override
+                        public void onRemoval(RemovalNotification<stateid4, NFS4State> notification) {
+                            if (!notification.wasEvicted()) return;
+                            long count = logCount.getAndIncrement();
+                            if (count %1000 == 0) {
+                                _log.warn("state id DoS from node: {} (x{})", _clientAddress, count);
+                            }
+                        }
+                }).build();
     }
 
     public void setCB(ClientCB cb) {
@@ -407,4 +422,5 @@ public class NFS4Client {
             state.tryDispose();
         }
     }
+
 }
