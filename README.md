@@ -23,6 +23,7 @@ The exports file supports almost all options supported by regular nfs servers:
 /exports *(rw)
 ```
 The supported options:
+
 | option              |  description                                        |
 |---------------------|-----------------------------------------------------|
 | ro                  | read-only export                                    |
