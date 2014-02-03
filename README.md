@@ -35,6 +35,10 @@ noacl               | do not check ACLs
 anonuid and anongid | set the uid and gid  of  the  anonymous account
 sec=<flavor>        | restricts the export to clients using this flavor
 
+License
+=======
+licensed under the GNU Lesser General Public License v3.0 or later.
+
 Support
 =======
 developers mailing list: __dev(-at-)dcache.org__
