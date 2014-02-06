@@ -19,6 +19,7 @@
  */
 package org.dcache.nfs.v4;
 
+import com.google.common.base.Optional;
 import java.io.IOException;
 import org.dcache.nfs.v4.xdr.open_delegation_type4;
 import org.dcache.nfs.v4.xdr.change_info4;
@@ -39,6 +40,7 @@ import org.dcache.nfs.v4.xdr.OPEN4res;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.nfs.v4.xdr.mode4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
@@ -104,20 +106,28 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
                         try {
 
+			    /**
+			     * according tho the spec. client MAY send all allowed attributes.
+			     * Nevertheless, in reality, clients send only mode.
+			     * We will accept only mode and client will send extra
+			     * SETATTR is required.
+			     *
+			     * REVISIT: we can apply all others as well to avoid
+			     * extra network roudtrip.
+			     */
+			    AttributeMap attributeMap = new AttributeMap(_args.opopen.openhow.how.createattrs);
+			    bitmap4 appliedAttribytes = bitmap4.of(0);
+			    Optional<mode4> createMode = attributeMap.get(nfs4_prot.FATTR4_MODE);
+			    int mode = 0600;
+			    if (createMode.isPresent()) {
+				mode = createMode.get().value.value;
+				appliedAttribytes.set(nfs4_prot.FATTR4_MODE);
+			    }
                             _log.debug("Creating a new file: {}", name);
                             inode = context.getFs().create(context.currentInode(), Stat.Type.REGULAR,
                                     name, context.getUser().getUID(),
-                                    context.getUser().getGID(), 0600);
+                                    context.getUser().getGID(), mode);
 
-                            // FIXME: proper implementation required
-                            switch (_args.opopen.openhow.how.mode) {
-                                case createmode4.UNCHECKED4:
-                                case createmode4.GUARDED4:
-                                    res.resok4.attrset = OperationSETATTR.setAttributes(_args.opopen.openhow.how.createattrs, inode, context);
-                                    break;
-                                case createmode4.EXCLUSIVE4:
-                                case createmode4.EXCLUSIVE4_1:
-                            }
                         } catch (FileExistsChimeraFsException e) {
 
                             if (exclusive) {
