@@ -59,6 +59,7 @@ public class FsExport {
     private final int _anonUid;
     private final int _anonGid;
     private final boolean _withDcap;
+    private final boolean _allRoot;
 
     /**
      * NFS clients may be specified in a number of ways:<br>
@@ -107,6 +108,7 @@ public class FsExport {
         _anonUid = builder.getAnonUid();
         _anonGid = builder.getAnonGid();
 	_withDcap = builder.isWithDcap();
+	_allRoot = builder.isAllRoot();
     }
 
     public String getPath() {
@@ -204,6 +206,10 @@ public class FsExport {
 	return _withDcap;
     }
 
+    public boolean isAllRoot() {
+	return _allRoot;
+    }
+
     public static class FsExportBuilder {
 
         private String _client = "*";
@@ -215,6 +221,7 @@ public class FsExport {
         private int _anonUid = DEFAULT_ANON_UID;
         private int _anonGid = DEFAULT_ANON_GID;
 	private boolean _withDcap = true;
+	private boolean _allRoot = false;
 
         public FsExportBuilder forClient(String client) {
             _client = client;
@@ -281,6 +288,11 @@ public class FsExport {
 	    return this;
 	}
 
+	public FsExportBuilder withAllRoot() {
+	    _allRoot = true;
+	    return this;
+	}
+
         public String getClient() {
             return _client;
         }
@@ -315,6 +327,10 @@ public class FsExport {
 
 	public boolean isWithDcap() {
 	    return _withDcap;
+	}
+
+	public boolean isAllRoot() {
+	    return _allRoot;
 	}
 
         public FsExport build(String path) {

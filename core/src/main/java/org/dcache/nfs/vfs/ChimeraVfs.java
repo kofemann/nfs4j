@@ -92,14 +92,18 @@ public class ChimeraVfs implements VirtualFileSystem {
     @Override
     public Inode create(Inode parent, Stat.Type type, String path, int uid, int gid, int mode) throws IOException {
         FsInode parentFsInode = toFsInode(parent);
-        FsInode fsInode = _fs.createFile(parentFsInode, path, uid, gid, mode | typeToChimera(type), typeToChimera(type));
+	int parentUid = parentFsInode.statCache().getUid();
+	int parentGid = parentFsInode.statCache().getGid();
+        FsInode fsInode = _fs.createFile(parentFsInode, path, parentUid, parentGid, mode | typeToChimera(type), typeToChimera(type));
         return toInode(fsInode);
     }
 
     @Override
     public Inode mkdir(Inode parent, String path, int uid, int gid, int mode) throws IOException {
         FsInode parentFsInode = toFsInode(parent);
-        FsInode fsInode = parentFsInode.mkdir(path, uid, gid, mode);
+	int parentUid = parentFsInode.statCache().getUid();
+	int parentGid = parentFsInode.statCache().getGid();
+        FsInode fsInode = parentFsInode.mkdir(path, parentUid, parentGid, mode);
         return toInode(fsInode);
     }
 
@@ -114,7 +118,9 @@ public class ChimeraVfs implements VirtualFileSystem {
     @Override
     public Inode symlink(Inode parent, String path, String link, int uid, int gid, int mode) throws IOException {
         FsInode parentFsInode = toFsInode(parent);
-        FsInode fsInode = _fs.createLink(parentFsInode, path, uid, gid, mode, link.getBytes(Charsets.UTF_8));
+	int parentUid = parentFsInode.statCache().getUid();
+	int parentGid = parentFsInode.statCache().getGid();
+        FsInode fsInode = _fs.createLink(parentFsInode, path, parentUid, parentGid, mode, link.getBytes(Charsets.UTF_8));
         return toInode(fsInode);
     }
 
