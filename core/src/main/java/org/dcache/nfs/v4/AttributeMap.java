@@ -143,7 +143,7 @@ public class AttributeMap {
 		attr = new settime4();
 		break;
 	    default:
-		throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "setattr of read-only attributes");
+		throw new ChimeraNFSException(nfsstat.NFSERR_INVAL, "setattr of read-only attributes: " + fattr);
 	}
 	attr.xdrDecode(xdr);
 	attrs.put(fattr, attr);
