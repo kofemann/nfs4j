@@ -25,7 +25,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.LOOKUP4res;
 import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
@@ -59,6 +58,7 @@ public class OperationLOOKUP extends AbstractNFSv4Operation {
         Inode newInode = context.getFs().lookup(context.currentInode(), name);
 
         context.currentInode(newInode);
+        context.currentStateid(Stateids.ZeroStateId());
         res.status = nfsstat.NFS_OK;
     }
 }

@@ -71,4 +71,11 @@ public class Stateids {
             throw new ChimeraNFSException(nfsstat.NFSERR_BAD_STATEID, "bad stateid");
         }
     }
+
+    public static stateid4 getCurrentStateidIfNeeded(CompoundContext context, stateid4 stateid) throws ChimeraNFSException {
+        if (stateid.equalsWithSeq(CURRENT_STATEID)) {
+            return context.currentStateid();
+        }
+        return stateid;
+    }
 }
