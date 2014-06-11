@@ -195,6 +195,6 @@ public class NFSv4StateHandler {
      * @return true, if grace period expired.
      */
     public boolean hasGracePeriodExpired() {
-	return _bootTime + TimeUnit.SECONDS.toMillis(NFSv4Defaults.NFS4_LEASE_TIME) < System.currentTimeMillis();
+	return true;
     }
 }
