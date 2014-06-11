@@ -69,20 +69,12 @@ public class DeviceManager implements NFSv41DeviceManager {
     private final Map<deviceid4, device_addr4> _deviceMap =
             new ConcurrentHashMap<>();
 
-    private InetSocketAddress[] _knownDataServers;
     private final StripingPattern<InetSocketAddress> _stripingPattern = new
             RoundRobinStripingPattern<>();
 
-    /**
-     * Set configures data servers. Each string represents a dataserver
-     * as <code>IP:port</code>
-     * @param servers
-     */
-    public void setDataservers(String[] servers) {
-        _knownDataServers = new InetSocketAddress[servers.length];
-        for(int i = 0; i < servers.length; i++) {
-            _knownDataServers[i] = InetSocketAddresses.inetAddressOf(servers[i]);
-        }
+    private int _dsPort;
+    public void setDsPort(int port) {
+        _dsPort = port;
     }
 
     /*
@@ -102,9 +94,6 @@ public class DeviceManager implements NFSv41DeviceManager {
             deviceId = MDS_ID;
         } else {
 
-            if(_knownDataServers.length == 0) {
-                throw new LayoutUnavailableException("No dataservers available");
-            }
             int id = _deviceIdGenerator.nextInt(256);
             ++id; /* 0 is reserved */
             deviceId = deviceidOf(id);
@@ -112,8 +101,8 @@ public class DeviceManager implements NFSv41DeviceManager {
             _log.debug("generating new device: {} ({}) for stateid {}",
                     deviceId, id, stateid);
 
-            deviceAddr = deviceAddrOf(_stripingPattern, _knownDataServers);
-
+            deviceAddr = deviceAddrOf(_stripingPattern, 
+                new InetSocketAddress(context.getRpcCall().getTransport().getLocalSocketAddress().getAddress(), _dsPort));
             _deviceMap.put(deviceId, deviceAddr);
         }
 

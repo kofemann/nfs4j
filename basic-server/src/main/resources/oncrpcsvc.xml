@@ -30,26 +30,11 @@
     </bean>
 
     <!--
-        Convert protperies with multiple values separated by comma into an array of strings:
-        key=value1,value2,value3 : String[] {value1, value2, value3}
-    -->
-    <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
-        <property name="customEditors">
-            <map>
-                <entry key="java.lang.String[]">
-                    <bean class="org.springframework.beans.propertyeditors.StringArrayPropertyEditor">
-                        <constructor-arg value="," />
-                    </bean>
-                </entry>
-            </map>
-        </property>
-    </bean>
-    <!--
         NFSv4.1 pNFS Data Server manager
     -->
     <bean id="device-manager" class="org.dcache.nfs.v4.DeviceManager">
         <description>Device manager</description>
-        <property name="dataservers" value="${mds.devices}" />
+        <property name="dsPort" value="${ds.port}" />
     </bean>
 
     <!--
@@ -88,13 +73,13 @@
 
     <bean id="export" class="org.dcache.nfs.ExportFile">
         <description>Export file</description>
-        <constructor-arg>
-            <bean class="java.io.File">
-                <constructor-arg value="exports"/>
-            </bean>
-        </constructor-arg>
+        <constructor-arg value="classpath:exports"/>
     </bean>
 
+    <bean id="export-init" class="org.dcache.nfs.ExportPathCreator" init-method="init">
+        <property name="exportFile" ref="export"/>
+        <property name="vfs" ref="vfs-intern"/>
+    </bean>
     <!--
         NFSv4.1 Operation factory
     -->
@@ -133,7 +118,7 @@
     <!--
        NFSv4.1 MDS
     -->
-    <bean id="mds" class="org.dcache.nfs.v4.NFSServerV41">
+    <bean id="mds" class="org.dcache.nfs.v4.NFSServerV41" depends-on="export-init">
         <description>NFSv4.1 MDS server</description>
         <constructor-arg ref="mds-factory"/>
         <constructor-arg ref="device-manager" />
@@ -153,50 +138,12 @@
         <constructor-arg index="3"><null/></constructor-arg>
         <constructor-arg index="4" ref="export" />
     </bean>
-    <!--
-        MOUNTD server
-    -->
-    <bean id="mountd" class="org.dcache.nfs.v3.MountServer">
-        <description>Mountd seriver</description>
-        <constructor-arg ref="export" />
-        <constructor-arg ref="vfs" />
-    </bean>
-
-    <!--
-        Embeded RPCBIND.
-
-        It will autodetect if there a system one already enabled.
-    -->
-    <bean id="rpcbind" class="org.dcache.xdr.portmap.OncRpcEmbeddedPortmap" />
 
     <!-- NFSv4 programm -->
     <bean id="nfsv4-programm" class="org.dcache.xdr.OncRpcProgram">
         <description>NFSv4.1 programm number</description>
         <constructor-arg index="0" value="100003" />
         <constructor-arg index="1" value="4" />
-    </bean>
-
-    <!-- NFSv3 programm -->
-    <bean id="nfsv3-programm" class="org.dcache.xdr.OncRpcProgram">
-        <description>NFSv3 programm number</description>
-        <constructor-arg index="0" value="100003" />
-        <constructor-arg index="1" value="3" />
-    </bean>
-
-    <!-- mount programm -->
-    <bean id="mount-programm" class="org.dcache.xdr.OncRpcProgram">
-        <description>Mount programm number</description>
-        <constructor-arg index="0" value="100005" />
-        <constructor-arg index="1" value="3" />
-    </bean>
-
-    <!--
-       NFSv3
-    -->
-    <bean id="nfs3" class="org.dcache.nfs.v3.NfsServerV3">
-        <description>NFSv3 server</description>
-        <constructor-arg ref="vfs" />
-        <constructor-arg ref="export" />
     </bean>
 
     <!--
@@ -210,15 +157,13 @@
         <property name="enableJmx" value="true"/>
     </bean>
 
-    <bean id="oncrpcsvc" class="org.dcache.xdr.OncRpcSvc" depends-on="rpcbind,oncrpcsvc-ds"
+    <bean id="oncrpcsvc" class="org.dcache.xdr.OncRpcSvc" depends-on="oncrpcsvc-ds"
           destroy-method="stop">
         <description>Onc RPC service for MDS</description>
         <constructor-arg ref="oncrpcsvc-builder"/>
         <property name="programs">
             <map>
                 <entry key-ref="nfsv4-programm" value-ref="mds"/>
-                <entry key-ref="nfsv3-programm" value-ref="nfs3"/>
-                <entry key-ref="mount-programm" value-ref="mountd"/>
             </map>
         </property>
     </bean>
