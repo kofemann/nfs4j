@@ -19,6 +19,7 @@
  */
 package org.dcache.nfs.v4;
 
+import org.dcache.nfs.NfsConfigDefaults;
 import java.io.IOException;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.xdr.deviceid4;
