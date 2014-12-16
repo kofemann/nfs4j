@@ -22,6 +22,7 @@ package org.dcache.nfs.v4;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.NfsConfig;
 import org.dcache.nfs.status.BadNameException;
 import org.dcache.nfs.status.InvalException;
 import org.dcache.nfs.status.NameTooLongException;
@@ -45,7 +46,8 @@ public class NameFilterTest {
     private static final byte[] GOOD_UTF8 = "a normal string".getBytes(StandardCharsets.UTF_8);
     private static final byte[] EMPTY_NAME = new byte[0];
 
-    private static final byte[] NAME_TOO_LONG = new byte[NFSv4Defaults.NFS4_MAXFILENAME + 1];
+    private final static int MAX_NAME_LEN = NfsConfig.DEFAULT.getMaxFileName();
+    private static final byte[] NAME_TOO_LONG = new byte[MAX_NAME_LEN + 1];
     static { Arrays.fill(NAME_TOO_LONG, (byte)'a'); }
 
     private static final byte[] DOT = ".".getBytes(StandardCharsets.UTF_8);
@@ -57,56 +59,56 @@ public class NameFilterTest {
 
     @Test
     public void testGoodUtf8() throws ChimeraNFSException {
-        NameFilter.convertName(GOOD_UTF8);
+        NameFilter.convertName(GOOD_UTF8, MAX_NAME_LEN);
     }
 
     @Test
     public void testGoodUtf8Arm() throws ChimeraNFSException {
-        NameFilter.convertName(GOOD_UTF8_ARM);
+        NameFilter.convertName(GOOD_UTF8_ARM, MAX_NAME_LEN);
     }
 
     @Test
     public void testGoodUtf8Hbr() throws ChimeraNFSException {
-        NameFilter.convertName(GOOD_UTF8_HBR);
+        NameFilter.convertName(GOOD_UTF8_HBR, MAX_NAME_LEN);
     }
 
     @Test(expected = InvalException.class)
     public void testBadUtf8() throws ChimeraNFSException {
-        NameFilter.convertName(BAD_UTF8);
+        NameFilter.convertName(BAD_UTF8, MAX_NAME_LEN);
     }
 
     @Test(expected = NameTooLongException.class)
     public void testNameTooLong() throws ChimeraNFSException {
-        NameFilter.convertName(NAME_TOO_LONG);
+        NameFilter.convertName(NAME_TOO_LONG, MAX_NAME_LEN);
     }
 
     @Test(expected = InvalException.class)
     public void testEmptyName() throws ChimeraNFSException {
-        NameFilter.convertName(EMPTY_NAME);
+        NameFilter.convertName(EMPTY_NAME, MAX_NAME_LEN);
     }
 
     @Test(expected = BadNameException.class)
     public void testDot() throws ChimeraNFSException {
-        NameFilter.convertName(DOT);
+        NameFilter.convertName(DOT, MAX_NAME_LEN);
     }
 
     @Test(expected = BadNameException.class)
     public void testDotDot() throws ChimeraNFSException {
-        NameFilter.convertName(DOT_DOT);
+        NameFilter.convertName(DOT_DOT, MAX_NAME_LEN);
     }
 
     @Test(expected = BadNameException.class)
     public void testNameWithSlash() throws ChimeraNFSException {
-        NameFilter.convertName(WITH_SLASH);
+        NameFilter.convertName(WITH_SLASH, MAX_NAME_LEN);
     }
 
     @Test(expected = BadNameException.class)
     public void testNameWithNull() throws ChimeraNFSException {
-        NameFilter.convertName(WITH_NULL);
+        NameFilter.convertName(WITH_NULL, MAX_NAME_LEN);
     }
 
     @Test(expected = InvalException.class)
     public void testUtf8WithSurrogat() throws ChimeraNFSException {
-        NameFilter.convertName(UTF8_WITH_SURROGAT);
+        NameFilter.convertName(UTF8_WITH_SURROGAT, MAX_NAME_LEN);
     }
 }

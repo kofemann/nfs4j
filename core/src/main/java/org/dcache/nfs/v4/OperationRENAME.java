@@ -61,8 +61,8 @@ public class OperationRENAME extends AbstractNFSv4Operation {
             throw new NotDirException("destination path  not a directory");
         }
 
-        String oldName = NameFilter.convertName(_args.oprename.oldname.value);
-        String newName = NameFilter.convertName(_args.oprename.newname.value);
+        String oldName = NameFilter.convertName(_args.oprename.oldname.value, context.getConfig().getMaxFileName());
+        String newName = NameFilter.convertName(_args.oprename.newname.value, context.getConfig().getMaxFileName());
 
         _log.debug("Rename: src={} name={} dest={} name={}",
                 sourceDir,

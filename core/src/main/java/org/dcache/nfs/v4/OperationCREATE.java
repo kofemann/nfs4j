@@ -63,7 +63,7 @@ public class OperationCREATE extends AbstractNFSv4Operation {
         Inode inode;
 
         Stat stat = context.getFs().getattr(context.currentInode());
-        String name = NameFilter.convertName(_args.opcreate.objname.value);
+        String name = NameFilter.convertName(_args.opcreate.objname.value, context.getConfig().getMaxFileName());
 
         if (stat.type() != Stat.Type.DIRECTORY) {
             throw new NotDirException();

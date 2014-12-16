@@ -219,7 +219,7 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
             case nfs4_prot.FATTR4_UNIQUE_HANDLES:
                 return Optional.of(new fattr4_unique_handles(true));
             case nfs4_prot.FATTR4_LEASE_TIME:
-                return Optional.of(new fattr4_lease_time(NFSv4Defaults.NFS4_LEASE_TIME));
+                return Optional.of(new fattr4_lease_time(context.getConfig().getLeaseTime()));
             case nfs4_prot.FATTR4_RDATTR_ERROR:
                 //enum is an integer
                 return Optional.of(new fattr4_rdattr_error(0));
@@ -264,15 +264,15 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
             case nfs4_prot.FATTR4_HOMOGENEOUS:
                 return Optional.of(new fattr4_homogeneous(true));
             case nfs4_prot.FATTR4_MAXFILESIZE:
-                return Optional.of(new fattr4_maxfilesize(NFSv4Defaults.NFS4_MAXFILESIZE));
+                return Optional.of(new fattr4_maxfilesize(context.getConfig().getMaxFileSize()));
             case nfs4_prot.FATTR4_MAXLINK:
-                return Optional.of(new fattr4_maxlink(NFSv4Defaults.NFS4_MAXLINK));
+                return Optional.of(new fattr4_maxlink(context.getConfig().getMaxLinkCount()));
             case nfs4_prot.FATTR4_MAXNAME:
-                return Optional.of(new fattr4_maxname(NFSv4Defaults.NFS4_MAXFILENAME));
+                return Optional.of(new fattr4_maxname(context.getConfig().getMaxFileName()));
             case nfs4_prot.FATTR4_MAXREAD:
-                return Optional.of(new fattr4_maxread(NFSv4Defaults.NFS4_MAXIOBUFFERSIZE));
+                return Optional.of(new fattr4_maxread(context.getConfig().getMaxReadSize()));
             case nfs4_prot.FATTR4_MAXWRITE:
-                fattr4_maxwrite maxwrite = new fattr4_maxwrite(NFSv4Defaults.NFS4_MAXIOBUFFERSIZE);
+                fattr4_maxwrite maxwrite = new fattr4_maxwrite(context.getConfig().getMaxWriteSize());
                 return Optional.of(maxwrite);
             case nfs4_prot.FATTR4_MIMETYPE:
                 return Optional.empty();

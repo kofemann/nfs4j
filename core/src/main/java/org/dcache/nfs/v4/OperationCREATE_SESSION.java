@@ -28,6 +28,7 @@ import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.CREATE_SESSION4resok;
 import org.dcache.nfs.v4.xdr.CREATE_SESSION4res;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.NfsConfig;
 import org.dcache.nfs.status.BadXdrException;
 import org.dcache.nfs.status.ClidInUseException;
 import org.dcache.nfs.status.InvalException;
@@ -108,11 +109,12 @@ public class OperationCREATE_SESSION extends AbstractNFSv4Operation {
             throw new ClidInUseException("client already in use: " + client.principal() + " " + context.getPrincipal());
         }
 
+        NfsConfig config = context.getConfig();
         NFSv41Session session = client.createSession(_args.opcreate_session.csa_sequence.value,
-                Math.min(NFSv4Defaults.NFS4_MAX_SESSION_SLOTS, _args.opcreate_session.csa_fore_chan_attrs.ca_maxrequests.value),
-                Math.min(NFSv4Defaults.NFS4_MAX_SESSION_SLOTS, _args.opcreate_session.csa_back_chan_attrs.ca_maxrequests.value),
-                Math.min(NFSv4Defaults.NFS4_MAX_OPS, _args.opcreate_session.csa_fore_chan_attrs.ca_maxoperations.value),
-                Math.min(NFSv4Defaults.NFS4_MAX_OPS, _args.opcreate_session.csa_back_chan_attrs.ca_maxoperations.value));
+                Math.min(config.getMaxSesseionSlots(), _args.opcreate_session.csa_fore_chan_attrs.ca_maxrequests.value),
+                Math.min(config.getMaxSesseionSlots(), _args.opcreate_session.csa_back_chan_attrs.ca_maxrequests.value),
+                Math.min(config.getMaxRequestOps(), _args.opcreate_session.csa_fore_chan_attrs.ca_maxoperations.value),
+                Math.min(config.getMaxRequestOps(), _args.opcreate_session.csa_back_chan_attrs.ca_maxoperations.value));
         _log.debug("adding new session [{}]", session);
         context.getStateHandler().addSession(session);
 

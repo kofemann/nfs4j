@@ -120,6 +120,23 @@
     </bean>
 
     <!--
+        nfs server limits
+    -->
+    <bean id="nfs-config" class="org.dcache.nfs.NfsConfig">
+        <property name="leaseTime" value="${nfs.config.lease-time}" />
+        <property name="maxFileName" value="${nfs.config.max-file-name}" />
+        <property name="maxWriteSize" value="${nfs.config.max-write-size}" />
+        <property name="maxReadSize" value="${nfs.config.max-read-size}" />
+        <property name="maxFileSize" value="${nfs.config.max-file-size}" />
+        <property name="maxLinkCount" value="${nfs.config.max-link-count}" />
+        <property name="stripeSize" value="${nfs.config.stripe-size}" />
+        <property name="implementationId" value="${nfs.v4.session.implementation.id}" />
+        <property name="implementationDomain" value="${nfs.v4.session.implementation.domain}" />
+        <property name="maxRequestOps" value="${nfs.v4.session.max-request-ops}" />
+        <property name="maxSesseionSlots" value="${nfs.v4.session.max-sesseion-slots}" />
+    </bean>
+
+    <!--
         NFSv4.1 Operation factory
     -->
     <bean id="ds-factory" class="org.dcache.nfs.v4.ds.DSOperationFactory"
@@ -139,6 +156,7 @@
         <constructor-arg ref="device-manager" />
         <constructor-arg ref="vfs" />
         <constructor-arg ref="export" />
+        <constructor-arg ref="nfs-config" />
     </bean>
 
     <!--
@@ -150,6 +168,7 @@
         <constructor-arg ref="device-manager" />
         <constructor-arg ref="vfs" />
         <constructor-arg ref="export" />
+        <constructor-arg ref="nfs-config" />
     </bean>
     <!--
         MOUNTD server

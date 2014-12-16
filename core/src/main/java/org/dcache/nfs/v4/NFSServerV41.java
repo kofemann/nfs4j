@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2014 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -40,6 +40,7 @@ import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.vfs.PseudoFs;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.commons.stats.RequestExecutionTimeGauges;
+import org.dcache.nfs.NfsConfig;
 import org.dcache.nfs.status.BadXdrException;
 import org.dcache.nfs.status.MinorVersMismatchException;
 import org.dcache.nfs.status.NotOnlyOpException;
@@ -56,19 +57,22 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
     private static final Logger _log = LoggerFactory.getLogger(NFSServerV41.class);
     private final NFSv4OperationFactory _operationFactory;
     private final NFSv41DeviceManager _deviceManager;
-    private final NFSv4StateHandler _statHandler = new NFSv4StateHandler();
+    private final NFSv4StateHandler _statHandler;
+    private final NfsConfig _nfsConfig;
 
     private static final RequestExecutionTimeGauges<String> GAUGES =
             new RequestExecutionTimeGauges<>(NFSServerV41.class.getName());
 
     public NFSServerV41(NFSv4OperationFactory operationFactory,
             NFSv41DeviceManager deviceManager, VirtualFileSystem fs,
-            ExportFile exportFile) throws OncRpcException {
+            ExportFile exportFile, NfsConfig nfsConfig) throws OncRpcException {
 
         _deviceManager = deviceManager;
         _fs = fs;
         _exportFile = exportFile;
         _operationFactory = operationFactory;
+        _nfsConfig = nfsConfig;
+        _statHandler = new NFSv4StateHandler(_nfsConfig.getLeaseTime());
     }
 
     @Override
@@ -102,7 +106,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                 throw new MinorVersMismatchException(String.format("Unsupported minor version [%d]",arg1.minorversion.value) );
             }
 
-	    if (arg1.argarray.length >= NFSv4Defaults.NFS4_MAX_OPS && minorversion == 0) {
+	    if (arg1.argarray.length >= _nfsConfig.getMaxRequestOps() && minorversion == 0) {
 		/*
 		   in 4.1 maxops handled per session
 		*/
@@ -113,7 +117,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
             VirtualFileSystem fs = new PseudoFs(_fs, call$, _exportFile);
             CompoundContext context = new CompoundContext(arg1.minorversion.value,
                 fs, _statHandler, _deviceManager, call$,
-                    _exportFile, arg1.argarray.length);
+                    _exportFile, arg1.argarray.length, _nfsConfig);
 
             boolean retransmit = false;
             for (nfs_argop4 op : arg1.argarray) {

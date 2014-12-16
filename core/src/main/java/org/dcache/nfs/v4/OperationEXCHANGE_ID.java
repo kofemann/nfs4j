@@ -58,9 +58,6 @@ import org.dcache.nfs.status.PermException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.dcache.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_DOMAIN;
-import static org.dcache.nfs.v4.NFSv4Defaults.NFS4_IMPLEMENTATION_ID;
-
 public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
     private static final Logger _log = LoggerFactory.getLogger(OperationEXCHANGE_ID.class);
@@ -274,8 +271,8 @@ public class OperationEXCHANGE_ID extends AbstractNFSv4Operation {
 
         res.eir_resok4.eir_server_impl_id = new nfs_impl_id4[1];
         res.eir_resok4.eir_server_impl_id[0] = new nfs_impl_id4();
-        res.eir_resok4.eir_server_impl_id[0].nii_domain = new utf8str_cis(NFS4_IMPLEMENTATION_DOMAIN);
-        res.eir_resok4.eir_server_impl_id[0].nii_name = new utf8str_cs(NFS4_IMPLEMENTATION_ID);
+        res.eir_resok4.eir_server_impl_id[0].nii_domain = new utf8str_cis(context.getConfig().getImplementationDomain());
+        res.eir_resok4.eir_server_impl_id[0].nii_name = new utf8str_cs(context.getConfig().getImplementationId());
         res.eir_resok4.eir_server_impl_id[0].nii_date = new nfstime4(COMPILE_TIME);
 
         res.eir_resok4.eir_state_protect = new state_protect4_r();

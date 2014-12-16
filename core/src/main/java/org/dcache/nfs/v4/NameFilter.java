@@ -43,11 +43,11 @@ class NameFilter {
      * @return string
      * @throws ChimeraNFSException if provided {@code bytes} are not a UTF8 encoded.
      */
-    public static String convertName(byte[] bytes) throws ChimeraNFSException {
+    public static String convertName(byte[] bytes, int max) throws ChimeraNFSException {
 
         String name = convertPath(bytes);
 
-        if (name.length() > NFSv4Defaults.NFS4_MAXFILENAME) {
+        if (name.length() > max) {
             throw new NameTooLongException("name too long");
         }
 

@@ -19,6 +19,7 @@
  */
 package org.dcache.nfs.v4;
 
+import org.dcache.nfs.NfsConfigDefaults;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import org.dcache.nfs.v4.xdr.stateid4;
@@ -40,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkState;
+import org.dcache.nfs.NfsConfig;
 
 public class NFSv4StateHandler {
 
@@ -58,7 +60,7 @@ public class NFSv4StateHandler {
     private boolean _running;
 
     public NFSv4StateHandler() {
-        this(NFSv4Defaults.NFS4_LEASE_TIME);
+        this(NfsConfig.DEFAULT.getLeaseTime());
     }
 
     NFSv4StateHandler(long leaseTime) {

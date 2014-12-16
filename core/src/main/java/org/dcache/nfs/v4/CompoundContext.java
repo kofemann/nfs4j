@@ -34,6 +34,7 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import org.dcache.auth.UidPrincipal;
+import org.dcache.nfs.NfsConfig;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.NoFileHandleException;
@@ -91,6 +92,7 @@ public class CompoundContext {
     private stateid4 _currentStateid = null;
     private stateid4 _savedStateid = null;
     private final Principal _principal;
+    private final NfsConfig _nfsConfig;
 
     /**
      * Create context of COUMPOUND request.
@@ -104,7 +106,7 @@ public class CompoundContext {
     public CompoundContext(int minorversion, VirtualFileSystem fs,
             NFSv4StateHandler stateHandler,
             NFSv41DeviceManager deviceManager, RpcCall call,
-            ExportFile exportFile, int opCount) {
+            ExportFile exportFile, int opCount, NfsConfig nfsConfig) {
         _minorversion = minorversion;
         _fs = fs;
         _deviceManager = deviceManager;
@@ -114,6 +116,7 @@ public class CompoundContext {
         _stateHandler = stateHandler;
         _totalOperationsCount = opCount;
         _principal = principalOf(call);
+        _nfsConfig = nfsConfig;
     }
 
     public RpcCall getRpcCall() {
@@ -319,6 +322,10 @@ public class CompoundContext {
 
     public Principal getPrincipal() {
         return _principal;
+    }
+
+    public NfsConfig getConfig() {
+        return _nfsConfig;
     }
 
     private Principal principalOf(final RpcCall call) {

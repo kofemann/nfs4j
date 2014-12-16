@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.Random;
 import javax.security.auth.Subject;
 import org.dcache.nfs.ExportFile;
+import org.dcache.nfs.NfsConfig;
 import org.dcache.nfs.vfs.VirtualFileSystem;
 import org.dcache.xdr.*;
 
@@ -94,6 +95,7 @@ public class CompoundContextBuilder {
     private NFSv41DeviceManager deviceManager = null;
     private ExportFile exportFile = null;
     private int opCount = 0;
+    private NfsConfig config = NfsConfig.DEFAULT;
 
     public CompoundContextBuilder withCall(RpcCall call) {
         this.call = call;
@@ -130,6 +132,11 @@ public class CompoundContextBuilder {
         return this;
     }
 
+    public CompoundContextBuilder withNfsConfig(NfsConfig config) {
+        this.config = config;
+        return this;
+    }
+
     public CompoundContext build() {
         return new CompoundContext(
                 minorversion,
@@ -138,7 +145,8 @@ public class CompoundContextBuilder {
                 deviceManager,
                 call,
                 exportFile,
-                opCount);
+                opCount,
+                config);
     }
 
 }
