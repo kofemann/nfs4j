@@ -45,6 +45,7 @@ import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.seqid4;
 import org.dcache.nfs.v4.xdr.sessionid4;
+import org.dcache.nfs.v4.xdr.state_owner4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.utils.Bytes;
 
@@ -224,6 +225,12 @@ public class NFS4Client {
         return Arrays.equals(_ownerId, other);
     }
 
+    public state_owner4 asStateOwner() {
+        state_owner4 stateOwner = new state_owner4();
+        stateOwner.clientid = _clientId;
+        stateOwner.owner = _ownerId;
+        return stateOwner;
+    }
     /**
      *
      * @return client generated verifier
@@ -310,12 +317,12 @@ public class NFS4Client {
         return _sessionSequence;
     }
 
-    public NFS4State createState() throws ChimeraNFSException {
+    public NFS4State createState(state_owner4 owner) throws ChimeraNFSException {
         if (_clientStates.size() >= MAX_OPEN_STATES) {
             throw new ResourceException("Too many states.");
         }
 
-        NFS4State state = new NFS4State(generateNewState(), _openStateId);
+        NFS4State state = new NFS4State(owner, generateNewState(), _openStateId);
         _openStateId++;
         _clientStates.put(state.stateid(), state);
         return state;

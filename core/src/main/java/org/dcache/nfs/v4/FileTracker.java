@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.ShareDeniedException;
+import org.dcache.nfs.v4.xdr.state_owner4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.utils.Opaque;
@@ -70,6 +71,7 @@ public class FileTracker {
      * and {@code shareDeny} conflicts with existing opens, @{link ShareDeniedException}
      * exception will be thrown.
      * @param client nfs client performing the open operation.
+     * @param stateOwner open state owner.
      * @param inode of opened file.
      * @param shareAccess type of access required.
      * @param shareDeny type of access to deny others.
@@ -77,7 +79,7 @@ public class FileTracker {
      * @throws ShareDeniedException if share reservation conflicts with an existing open.
      * @throws ChimeraNFSException
      */
-    public stateid4 addOpen(NFS4Client client, Inode inode, int shareAccess, int shareDeny) throws  ChimeraNFSException {
+    public stateid4 addOpen(NFS4Client client, state_owner4 stateOwner, Inode inode, int shareAccess, int shareDeny) throws  ChimeraNFSException {
 
         Opaque fileId = new Opaque(inode.getFileId());
         // check for existing opens on that file
@@ -95,7 +97,7 @@ public class FileTracker {
                     throw new ShareDeniedException("Conflicting share");
                 }
             }
-            NFS4State state = client.createState();
+            NFS4State state = client.createState(stateOwner);
             stateid = state.stateid();
             OpenState openState = new OpenState(client, stateid, shareAccess, shareDeny);
             opens.add(openState);

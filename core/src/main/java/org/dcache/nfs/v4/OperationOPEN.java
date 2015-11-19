@@ -52,6 +52,7 @@ import org.dcache.nfs.status.WrongTypeException;
 import org.dcache.nfs.v4.xdr.fattr4_size;
 import org.dcache.nfs.v4.xdr.mode4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
+import org.dcache.nfs.v4.xdr.state_owner4;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
@@ -82,7 +83,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
             client.validateSequence(_args.opopen.seqid);
             client.updateLeaseTime();
-            _log.debug("open request form {}", _args.opopen.owner);
+            _log.debug("open request form {} ", _args.opopen.owner);
         }
 
         res.resok4 = new OPEN4resok();
@@ -258,8 +259,15 @@ public class OperationOPEN extends AbstractNFSv4Operation {
          * THis is a perfectly a valid situation as at the end file is created and only
          * one writer is allowed.
          */
-        stateid4 stateid = context.getStateHandler().getFileTracker().addOpen(client, context.currentInode(),
-                _args.opopen.share_access.value, _args.opopen.share_deny.value);
+        state_owner4 stateOwner = context.getMinorversion() == 0 ?
+                _args.opopen.owner : client.asStateOwner();
+
+        stateid4 stateid = context.getStateHandler()
+                .getFileTracker()
+                .addOpen(client, stateOwner,
+                        context.currentInode(),
+                        _args.opopen.share_access.value,
+                        _args.opopen.share_deny.value);
 
         context.currentStateid(stateid);
         res.resok4.stateid = stateid;
