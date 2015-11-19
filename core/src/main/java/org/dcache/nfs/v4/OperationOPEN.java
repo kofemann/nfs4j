@@ -79,7 +79,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
             client.validateSequence(_args.opopen.seqid);
             client.updateLeaseTime();
-            _log.debug("open request form {}", _args.opopen.owner);
+            _log.debug("open request form {} ", _args.opopen.owner);
         }
 
         res.resok4 = new OPEN4resok();
@@ -255,6 +255,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
          * THis is a perfectly a valid situation as at the end file is created and only
          * one writer is allowed.
          */
+
         state_owner4 owner = context.getMinorversion() == 0
                 ?_args.opopen.owner : client.asStateOwner();
         stateid4 stateid = context
