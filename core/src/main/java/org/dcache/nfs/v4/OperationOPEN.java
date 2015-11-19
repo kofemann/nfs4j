@@ -82,7 +82,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
 
             client.validateOpenSequence(_args.opopen.seqid);
             client.updateLeaseTime();
-            _log.debug("open request form {}", _args.opopen.owner);
+            _log.debug("open request form {} ", _args.opopen.owner);
         }
 
         res.resok4 = new OPEN4resok();
