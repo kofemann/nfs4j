@@ -164,7 +164,7 @@ public class FileTracker {
         if (opens != null) {
             synchronized (opens) {
                 return opens.stream()
-                        .filter(s -> client.getId() == s.client.getId())
+                        .filter(s -> client.getId().value == s.client.getId().value)
                         .filter(s -> s.stateid.equals(stateid))
                         .map(OpenState::getShareAccess)
                         .findFirst()
