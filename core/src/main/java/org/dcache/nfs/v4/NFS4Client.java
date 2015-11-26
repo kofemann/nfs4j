@@ -41,6 +41,9 @@ import org.dcache.nfs.status.CompleteAlreadyException;
 import org.dcache.nfs.status.ExpiredException;
 import org.dcache.nfs.status.ResourceException;
 import org.dcache.nfs.status.SeqMisorderedException;
+import org.dcache.nfs.v4.xdr.clientid4;
+import org.dcache.nfs.v4.xdr.lock_owner4;
+import org.dcache.nfs.v4.xdr.open_owner4;
 import org.dcache.nfs.v4.xdr.seqid4;
 import org.dcache.nfs.v4.xdr.verifier4;
 import org.dcache.utils.Bytes;
@@ -307,13 +310,49 @@ public class NFS4Client {
         return _sessionSequence;
     }
 
+    public open_owner4 asOpenOwner() {
+        open_owner4 owner = new open_owner4();
+        owner.clientid = new clientid4(_clientId);
+        owner.owner = this._ownerId;
+        return owner;
+    }
+
+    public lock_owner4 asLockOwner() {
+        lock_owner4 owner = new lock_owner4();
+        owner.clientid = new clientid4(_clientId);
+        owner.owner = this._ownerId;
+        return owner;
+    }
+
+    public OpenState createOpenState(open_owner4 owner) throws ChimeraNFSException {
+        if (_clientStates.size() >= MAX_OPEN_STATES) {
+            throw new ResourceException("Too many states.");
+        }
+
+        stateid4 stateid = new stateid4(generateNewState(), _openStateId);
+        OpenState state = new OpenState(stateid, owner);
+        _openStateId++;
+        _clientStates.put(state.stateid(), state);
+        return state;
+    }
+
+    public LockState createLockState(lock_owner4 owner) throws ChimeraNFSException {
+        if (_clientStates.size() >= MAX_OPEN_STATES) {
+            throw new ResourceException("Too many states.");
+        }
+
+        stateid4 stateid = new stateid4(generateNewState(), 1);
+        LockState state = new LockState(stateid, owner);
+        _clientStates.put(state.stateid(), state);
+        return state;
+    }
+
     public NFS4State createState() throws ChimeraNFSException {
         if (_clientStates.size() >= MAX_OPEN_STATES) {
             throw new ResourceException("Too many states.");
         }
 
-        NFS4State state = new NFS4State(generateNewState(), _openStateId);
-        _openStateId++;
+        NFS4State state = new NFS4State(generateNewState(), 1);
         _clientStates.put(state.stateid(), state);
         return state;
     }
