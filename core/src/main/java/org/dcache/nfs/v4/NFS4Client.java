@@ -109,7 +109,7 @@ public class NFS4Client {
     private int _openStateId = 1;
 
     /* per client sequence to serialize opens with nfsv4.0 */
-    private seqid4 _clientSeq;
+    private seqid4 _openSeq;
 
     /**
      * The sequence number used to track session creations.
@@ -284,7 +284,7 @@ public class NFS4Client {
     public synchronized void reset() {
         refreshLeaseTime();
         _isConfirmed = false;
-        _clientSeq = null;
+        _openSeq = null;
     }
 
     /**
@@ -318,15 +318,15 @@ public class NFS4Client {
         return state;
     }
 
-    public synchronized void validateSequence(seqid4 openSeqid) throws BadSeqidException {
-        if (_clientSeq == null) {
-            _clientSeq = openSeqid;
+    public synchronized void validateOpenSequence(seqid4 openSeqid) throws BadSeqidException {
+        if (_openSeq == null) {
+            _openSeq = openSeqid;
         } else {
-            int next = _clientSeq.value + 1;
+            int next = _openSeq.value + 1;
             if (next != openSeqid.value) {
                 throw new BadSeqidException();
             }
-            _clientSeq.value = next;
+            _openSeq.value = next;
         }
     }
 

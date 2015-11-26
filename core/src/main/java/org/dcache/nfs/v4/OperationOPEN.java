@@ -81,7 +81,7 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                 throw new StaleClientidException("bad client id.");
             }
 
-            client.validateSequence(_args.opopen.seqid);
+            client.validateOpenSequence(_args.opopen.seqid);
             client.updateLeaseTime();
             _log.debug("open request form {}", _args.opopen.owner);
         }
