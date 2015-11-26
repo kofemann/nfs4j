@@ -36,6 +36,7 @@ import static org.dcache.nfs.v4.NfsTestUtils.createClient;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.dcache.nfs.v4.NfsTestUtils.createClient;
 
 public class NFS4ClientTest {
 
