@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2015 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -17,22 +17,24 @@
  * details); if not, write to the Free Software Foundation, Inc.,
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-package org.dcache.nfs.v4.xdr;
-import org.dcache.xdr.*;
-import java.io.IOException;
+package org.dcache.nfs.v4;
 
-public class seqid4 extends uint32_t {
+import org.dcache.nfs.v4.xdr.lock_owner4;
+import org.dcache.nfs.v4.xdr.stateid4;
 
-    public seqid4() {
+/**
+ * State representing file lock
+ */
+public class LockState extends NFS4State {
+
+    private final lock_owner4 owner;
+
+    public LockState(stateid4 stateid, lock_owner4 owner) {
+        super(stateid);
+        this.owner = owner;
     }
 
-    public seqid4(int value) {
-        super(value);
-    }
-
-    public seqid4(XdrDecodingStream xdr)
-           throws OncRpcException, IOException {
-        xdrDecode(xdr);
+    public lock_owner4 getOpenOwner() {
+        return owner;
     }
 }
-// End of seqid4.java

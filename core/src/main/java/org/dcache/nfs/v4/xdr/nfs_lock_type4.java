@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2012 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -28,5 +28,14 @@ public interface nfs_lock_type4 {
     public static final int READW_LT = 3;
     public static final int WRITEW_LT = 4;
 
+    public static String toString(int lt) {
+        switch(lt) {
+            case READ_LT: return "READ_LT";
+            case READW_LT: return "READW_LT";
+            case WRITE_LT: return "WRITE_LT";
+            case WRITEW_LT: return "WRITEW_LT";
+            default: throw new IllegalArgumentException("bad lock type: " + lt);
+        }
+    }
 }
 // End of nfs_lock_type4.java

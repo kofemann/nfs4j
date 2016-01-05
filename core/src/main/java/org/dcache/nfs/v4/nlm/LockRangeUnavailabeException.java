@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2015 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -17,22 +17,17 @@
  * details); if not, write to the Free Software Foundation, Inc.,
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-package org.dcache.nfs.v4.xdr;
-import org.dcache.xdr.*;
-import java.io.IOException;
+package org.dcache.nfs.v4.nlm;
 
-public class seqid4 extends uint32_t {
+/**
+ *
+ */
+public class LockRangeUnavailabeException extends LockException {
 
-    public seqid4() {
+    private static final long serialVersionUID = -5620829206505429656L;
+
+    public LockRangeUnavailabeException(String message) {
+        super(message);
     }
 
-    public seqid4(int value) {
-        super(value);
-    }
-
-    public seqid4(XdrDecodingStream xdr)
-           throws OncRpcException, IOException {
-        xdrDecode(xdr);
-    }
 }
-// End of seqid4.java
