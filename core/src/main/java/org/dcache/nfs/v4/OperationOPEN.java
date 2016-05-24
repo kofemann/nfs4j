@@ -52,6 +52,7 @@ import org.dcache.nfs.status.WrongTypeException;
 import org.dcache.nfs.v4.xdr.fattr4_size;
 import org.dcache.nfs.v4.xdr.mode4;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
+import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.Stat;
 import org.dcache.xdr.OncRpcException;
@@ -251,12 +252,19 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                     | nfs4_prot.OPEN4_RESULT_CONFIRM);
         }
 
-        NFS4State nfs4state = client.createState();
-        context.currentStateid(nfs4state.stateid());
-        res.resok4.stateid = nfs4state.stateid();
+        /*
+         * NOTICE:
+         * in case on concurrent non-exclusive created with share_deny == WRITE
+         * may happen that client which have created the file will get DENY.
+         *
+         * THis is a perfectly a valid situation as at the end file is created and only
+         * one writer is allowed.
+         */
+        stateid4 stateid = context.getStateHandler().getFileTracker().addOpen(client, context.currentInode(),
+                _args.opopen.share_access.value, _args.opopen.share_deny.value);
 
-        _log.debug("New stateID: {}", nfs4state.stateid());
-
+        context.currentStateid(stateid);
+        res.resok4.stateid = stateid;
         res.status = nfsstat.NFS_OK;
 
     }
