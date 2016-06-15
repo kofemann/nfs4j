@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -46,17 +46,19 @@ public class NFS4State {
     private final state_owner4 _owner;
     private boolean _isConfimed = false;
     private boolean _disposed = false;
+    private final NFS4State _parentState;
 
     private final List<StateDisposeListener> _disposeListeners;
 
     public NFS4State(state_owner4 owner, stateid4 stateid) {
+        this(null, owner, stateid);
+    }
+
+    public NFS4State(NFS4State parentState, state_owner4 owner, stateid4 stateid) {
+        _parentState = parentState;
         _owner = owner;
         _stateid = stateid;
         _disposeListeners = new ArrayList<>();
-    }
-
-    public NFS4State(state_owner4 owner, byte[] other, int seqid) {
-        this(owner, new stateid4(other, seqid));
     }
 
     public void bumpSeqid() { ++ _stateid.seqid.value; }
@@ -87,6 +89,10 @@ public class NFS4State {
             _disposeListeners.forEach(l -> l.notifyDisposed(this));
             _disposed = true;
         }
+    }
+
+    public NFS4State getParentState() {
+        return _parentState == null? this : _parentState;
     }
 
     /**
