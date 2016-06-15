@@ -87,11 +87,13 @@ public class OperationLAYOUTGET extends AbstractNFSv4Operation {
 
         int ioMode = _args.oplayoutget.loga_iomode;
 
+        NFS4State state = context.getSession().getClient().state(_args.oplayoutget.loga_stateid);
         // check open file mode
         int shareAccess = context
                 .getStateHandler()
                 .getFileTracker()
-                .getShareAccess(context.getSession().getClient(), inode, _args.oplayoutget.loga_stateid);
+                .getShareAccess(context.getSession().getClient(), inode,
+                        state.getParentState().stateid());
 
         if ((shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) == 0 &&
                 (ioMode & layoutiomode4.LAYOUTIOMODE4_RW) != 0) {
