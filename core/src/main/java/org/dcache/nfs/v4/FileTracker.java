@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadStateidException;
+import org.dcache.nfs.status.InvalException;
 import org.dcache.nfs.status.ShareDeniedException;
 import org.dcache.nfs.v4.xdr.state_owner4;
 import org.dcache.nfs.v4.xdr.stateid4;
@@ -135,6 +136,45 @@ public class FileTracker {
             }
             state.addDisposeListener(s -> {removeOpen(inode, stateid);} );
             return stateid;
+        }
+    }
+
+    /**
+     * Reduce access on open file.
+     *
+     * @param client nfs client performing the open operation.
+     * @param stateid associated with the open.
+     * @param inode of opened file.
+     * @param shareAccess type of access required.
+     * @param shareDeny type of access to deny others.
+     * @return stateid associated with open.
+     * @throws ChimeraNFSException
+     */
+    public stateid4 downgradeOpen(NFS4Client client, stateid4 stateid, Inode inode, int shareAccess, int shareDeny) throws ChimeraNFSException {
+
+        Opaque fileId = new Opaque(inode.getFileId());
+        final List<OpenState> opens = files.get(fileId);
+
+        synchronized (opens) {
+            OpenState os = opens.stream()
+                    .filter(s -> client.getId().value == s.client.getId().value)
+                    .filter(s -> s.stateid.equals(stateid))
+                    .findFirst()
+                    .orElseThrow(BadStateidException::new);
+
+            if (shareAccess != 0 && (os.shareAccess & shareAccess) == 0) {
+                throw new InvalException("downgrading to not owned share_access mode");
+            }
+
+            if (shareDeny != 0 && (os.shareDeny & shareDeny) == 0) {
+                throw new InvalException("downgrading to not share_owned deny mode");
+            }
+
+            os.shareAccess = shareAccess;
+            os.shareDeny = shareDeny;
+
+            os.stateid.seqid.value++;
+            return os.stateid;
         }
     }
 
