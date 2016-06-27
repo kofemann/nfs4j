@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -55,13 +55,13 @@ public class NFSv4StateHandlerTest {
 
     @Test(expected=StaleClientidException.class)
     public void testGetClientNotExists() throws Exception {
-        _stateHandler.getClientByID(new clientid4(1L));
+        _stateHandler.getClient(new clientid4(1L));
     }
 
     @Test
     public void testGetClientExists() throws Exception {
          _client = createClient(_stateHandler);
-        assertEquals(_client,  _stateHandler.getClientByID(_client.getId()));
+        assertEquals(_client,  _stateHandler.getClient(_client.getId()));
     }
 
     @Test

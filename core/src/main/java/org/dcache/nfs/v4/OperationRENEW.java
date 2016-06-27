@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -24,7 +24,6 @@ import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.RENEW4res;
 import org.dcache.nfs.ChimeraNFSException;
-import org.dcache.nfs.status.StaleClientidException;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +41,7 @@ public class OperationRENEW extends AbstractNFSv4Operation {
 
         final RENEW4res res = result.oprenew;
 
-        NFS4Client client = context.getStateHandler().getClientByID(_args.oprenew.clientid);
-        if (client == null) {
-            throw new StaleClientidException();
-        }
-
+        NFS4Client client = context.getStateHandler().getClient(_args.oprenew.clientid);
         client.updateLeaseTime();
         res.status = nfsstat.NFS_OK;
     }
