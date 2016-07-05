@@ -123,7 +123,7 @@ public class NFS4Client {
     private final Map<stateid4, NFS4State> _clientStates = new ConcurrentHashMap<>();
 
     // FIXME: the max stateids have to be controlled by session
-    private final int MAX_OPEN_STATES = 16384;
+    private final int MAX_OPEN_STATES = 65536;
 
     /**
      * sessions associated with the client
