@@ -44,6 +44,7 @@ import org.dcache.chimera.InvalidArgumentChimeraException;
 import org.dcache.chimera.IsDirChimeraException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.NotDirChimeraException;
+import org.dcache.chimera.PermissionDeniedChimeraFsException;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.nfs.status.*;
 import org.dcache.nfs.v4.NfsIdMapping;
@@ -153,6 +154,8 @@ public class ChimeraVfs implements VirtualFileSystem, AclCheckable {
         FsInode to = toFsInode(dest);
 	try {
 	    return _fs.move(from, oldName, to, newName);
+        } catch (PermissionDeniedChimeraFsException e) {
+            throw new PermException(e.getMessage(), e);
 	} catch (NotDirChimeraException e) {
 	    throw new NotDirException("not a directory");
 	} catch (FileExistsChimeraFsException e) {
