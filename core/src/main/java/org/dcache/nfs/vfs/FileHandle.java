@@ -16,6 +16,7 @@
  */
 package org.dcache.nfs.vfs;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.dcache.utils.Bytes;
@@ -33,7 +34,9 @@ import org.dcache.utils.Bytes;
  *   byte[] fh_opaque;     // FS specific opaque data <= 114
  * </pre>
 */
-public class FileHandle {
+public class FileHandle implements Serializable {
+
+    private static final long serialVersionUID = -2033640481797533418L;
 
     private final static int MIN_LEN = 14;
     private final static int VERSION = 1;

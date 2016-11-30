@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -22,61 +22,78 @@ package org.dcache.nfs.vfs;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.InMemoryFormat;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
-import org.dcache.utils.GuavaCacheMXBeanImpl;
-import org.dcache.utils.Opaque;
+
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.configuration.CompleteConfiguration;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheLoaderException;
+import javax.cache.spi.CachingProvider;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Caching decorator.
  */
 public class VfsCache extends ForwardingFileSystem {
 
-    private final LoadingCache<CacheKey, Inode> _lookupCache;
-    private final Cache<Opaque, Stat> _statCache;
-    private final LoadingCache<Inode, Inode> _parentCache;
+    private final Cache<CacheKey, Inode> _lookupCache;
+    private final Cache<Inode, Stat> _statCache;
+    private final Cache<Inode, Inode> _parentCache;
     private final Supplier<FsStat> _fsStatSupplier;
 
     private final VirtualFileSystem _inner;
 
     public VfsCache(VirtualFileSystem inner, VfsCacheConfig cacheConfig) {
         _inner = inner;
-	_lookupCache = CacheBuilder.newBuilder()
-		.maximumSize(cacheConfig.getMaxEntries())
-		.expireAfterWrite(cacheConfig.getLifeTime(), cacheConfig.getTimeUnit())
-		.softValues()
-                .recordStats()
-		.build(new LoockupLoader());
 
-	_statCache = CacheBuilder.newBuilder()
-		.maximumSize(cacheConfig.getMaxEntries())
-		.expireAfterWrite(cacheConfig.getLifeTime(), cacheConfig.getTimeUnit())
-		.softValues()
+        _lookupCache = new JCacheBuilder<>()
+                .withCacheName("vfs-lookup-cache")
+                .withKeyType(CacheKey.class)
+                .withValueType(Inode.class)
+                .withCacheLoader(new LookupLoader())
+                .withMaximumSize(cacheConfig.getMaxEntries())
+                .expireAfterWrite(cacheConfig.getLifeTime(), cacheConfig.getTimeUnit())
                 .recordStats()
-		.build();
+                .build();
 
-        _parentCache = CacheBuilder.newBuilder()
-                .maximumSize(cacheConfig.getMaxEntries())
+        _statCache = new JCacheBuilder<>()
+                .withCacheName("vfs-stat-cache")
+                .withKeyType(Inode.class)
+                .withValueType(Stat.class)
+                .withCacheLoader( new StatLoader())
+                .withMaximumSize(cacheConfig.getMaxEntries())
+                .expireAfterWrite(cacheConfig.getLifeTime(), cacheConfig.getTimeUnit())
+                .recordStats()
+                .build();
+
+        _parentCache = new JCacheBuilder<>()
+                .withCacheName("vfs-parent-cache")
+                .withKeyType(Inode.class)
+                .withValueType(Inode.class)
+                .withCacheLoader(new ParentLoader())
+                .withMaximumSize(cacheConfig.getMaxEntries())
                 .expireAfterWrite(100, TimeUnit.MILLISECONDS)
-                .softValues()
                 .recordStats()
-                .build(new ParentLoader());
+                .build();
 
         _fsStatSupplier = cacheConfig.getFsStatLifeTime() > 0 ?
                 Suppliers.memoizeWithExpiration(new FsStatSupplier(), cacheConfig.getFsStatLifeTime(), cacheConfig.getFsSataTimeUnit()) :
                 new FsStatSupplier();
-
-        new GuavaCacheMXBeanImpl("vfs-stat", _statCache);
-        new GuavaCacheMXBeanImpl("vfs-parent", _parentCache);
-        new GuavaCacheMXBeanImpl("vfs-lookup", _lookupCache);
     }
 
     @Override
@@ -182,7 +199,7 @@ public class VfsCache extends ForwardingFileSystem {
      * @param path to invalidate
      */
     public void invalidateLookupCache(Inode parent, String path) {
-	_lookupCache.invalidate(new CacheKey(parent, path));
+	_lookupCache.remove(new CacheKey(parent, path));
     }
 
     private void updateLookupCache(Inode parent, String path, Inode inode) {
@@ -192,63 +209,88 @@ public class VfsCache extends ForwardingFileSystem {
     /**
      * Discards cached {@link Stat} value for given {@link Inode}.
      *
-     * @param parent inode
-     * @param path to invalidate
+     * @param inode inode of the object to invalidate in the cache.
      */
     public void invalidateStatCache(final Inode inode) {
-	_statCache.invalidate(new Opaque(inode.getFileId()));
+	_statCache.remove(inode);
     }
 
     private void updateParentCache(Inode inode, Inode parent) {
         _parentCache.put(inode, parent);
     }
 
-    private class LoockupLoader extends CacheLoader<CacheKey, Inode> {
+    private abstract class SimpleCacheLoader<K, V> implements CacheLoader<K, V> {
 
         @Override
-        public Inode load(CacheKey k) throws Exception {
-            return _inner.lookup(k.getParent(), k.getName());
+        public Map<K, V> loadAll(Iterable<? extends K> keys) throws CacheLoaderException {
+            Map<K, V> loadedValues = new HashMap<>();
+            keys.forEach(k -> loadedValues.put(k, load(k)));
+            return loadedValues;
+        }
+    }
+
+    private class LookupLoader extends SimpleCacheLoader<CacheKey, Inode> {
+
+        @Override
+        public Inode load(CacheKey k) throws CacheLoaderException {
+            try {
+                return _inner.lookup(k.getParent(), k.getName());
+            } catch (IOException e) {
+                throw new CacheLoaderException(e);
+            }
         }
     }
 
     private Inode lookupFromCacheOrLoad(final Inode parent, final String path) throws IOException {
 	try {
 	    return _lookupCache.get(new CacheKey(parent, path));
-	} catch (ExecutionException e) {
+	} catch (CacheLoaderException e) {
 	    Throwable t = e.getCause();
 	    Throwables.throwIfInstanceOf(t, IOException.class);
+            Throwables.throwIfUnchecked(t);
 	    throw new IOException(e.getMessage(), t);
 	}
+    }
+
+    private class StatLoader extends SimpleCacheLoader<Inode, Stat> {
+
+        @Override
+        public Stat load(Inode key) throws CacheLoaderException {
+            try {
+                return _inner.getattr(key);
+            } catch (IOException e) {
+                throw new CacheLoaderException(e);
+            }
+        }
     }
 
     private Stat statFromCacheOrLoad(final Inode inode) throws IOException {
 	try {
-	    return _statCache.get(new Opaque(inode.getFileId()), new Callable<Stat>() {
-
-		@Override
-		public Stat call() throws Exception {
-		    return _inner.getattr(inode);
-		}
-	    });
-	} catch (ExecutionException e) {
+	    return _statCache.get(inode);
+	} catch (CacheLoaderException e) {
 	    Throwable t = e.getCause();
 	    Throwables.throwIfInstanceOf(t, IOException.class);
+            Throwables.throwIfUnchecked(t);
 	    throw new IOException(e.getMessage(), t);
 	}
     }
 
-    private class ParentLoader extends CacheLoader<Inode, Inode> {
+    private class ParentLoader extends SimpleCacheLoader<Inode, Inode> {
 
         @Override
-        public Inode load(Inode inode) throws Exception {
-            return _inner.parentOf(inode);
+        public Inode load(Inode inode) throws CacheLoaderException {
+            try {
+                return _inner.parentOf(inode);
+            } catch (IOException e) {
+                throw new CacheLoaderException(e);
+            }
         }
     }
 
     private Inode parentFromCacheOrLoad(final Inode inode) throws IOException {
         try {
             return _parentCache.get(inode);
-        } catch (ExecutionException e) {
+        } catch (CacheLoaderException e) {
             Throwable t = e.getCause();
             Throwables.throwIfInstanceOf(t, IOException.class);
             throw new IOException(e.getMessage(), t);
@@ -257,7 +299,9 @@ public class VfsCache extends ForwardingFileSystem {
     /**
      * Cache entry key based on parent id and name
      */
-    private static class CacheKey {
+    private static class CacheKey implements Serializable {
+
+        private static final long serialVersionUID = 6728520521839650679L;
 
         private final Inode _parent;
         private final String _name;
@@ -306,6 +350,121 @@ public class VfsCache extends ForwardingFileSystem {
                 // not true, but good enough.
                 return new FsStat(0, 0, 0, 0);
             }
+        }
+    }
+
+    private static class JCacheBuilder<K, V> {
+
+        private EvictionConfig.MaxSizePolicy maxSizePolicy;
+        private int cacheSize = Integer.MAX_VALUE;
+
+        private CacheLoader<K, V> cacheLoader;
+
+        private Duration createExpiry = Duration.ETERNAL;
+        private Duration accessExpiry = Duration.ETERNAL;
+        private Duration updateExpiry = Duration.ETERNAL;
+
+        private Class<K> keyType;
+        private Class<V> valueType;
+        private String cacheName;
+        private boolean recordStats;
+
+        public JCacheBuilder withCacheLoader(CacheLoader<K, V> cacheLoader) {
+            this.cacheLoader = cacheLoader;
+            return this;
+        }
+
+        public JCacheBuilder withKeyType(Class<K> keyType) {
+            this.keyType = keyType;
+            return this;
+        }
+
+        public JCacheBuilder withValueType(Class<V> valueType) {
+            this.valueType = valueType;
+            return this;
+        }
+
+        public JCacheBuilder withMaximumSize(int size) {
+            cacheSize = size;
+            return this;
+        }
+
+        public JCacheBuilder expireAfterWrite(long time, TimeUnit unit) {
+            createExpiry = new Duration(unit, time);
+            updateExpiry = new Duration(unit, time);
+            return this;
+        }
+
+        public JCacheBuilder expireAfterAccess(long time, TimeUnit unit) {
+            accessExpiry = new Duration(unit, time);
+            return this;
+        }
+
+        public JCacheBuilder withCacheName(String cacheName) {
+            this.cacheName = cacheName;
+            return this;
+        }
+
+        public JCacheBuilder recordStats() {
+            this.recordStats = true;
+            return this;
+        }
+
+        Cache<? extends K, ? extends V> build() {
+
+            requireNonNull(cacheName, "Cache name must be initialized");
+            requireNonNull(keyType, "Key type must be initialized");
+            requireNonNull(valueType, "Value type must be initialized");
+
+            final CachingProvider provider = Caching.getCachingProvider();
+            final CacheManager cacheManager = provider.getCacheManager();
+
+            final ExpiryPolicy expiry = new ExpiryPolicy() {
+                @Override
+                public Duration getExpiryForCreation() {
+                    return createExpiry;
+                }
+
+                @Override
+                public Duration getExpiryForAccess() {
+                    return accessExpiry;
+                }
+
+                @Override
+                public Duration getExpiryForUpdate() {
+                    return updateExpiry;
+                }
+            };
+
+            final CompleteConfiguration<K, V> configuration = new MutableConfiguration()
+                    .setTypes(keyType, valueType)
+                    .setStoreByValue(false)
+                    .setStatisticsEnabled(recordStats)
+                    .setExpiryPolicyFactory(() -> expiry)
+                    .setReadThrough(cacheLoader != null)
+                    .setCacheLoaderFactory(() -> cacheLoader);
+
+            /*
+             * JSR107 does not provides a way to configure cache size.
+             * Thus we need to use back-end implementation specific code tricks.
+             */
+
+            /*
+             * REVISIT:
+             * We can initialize hazelcast by putting configuration into external
+             * XML file. Nevertheless, this requires to expose some internal
+             * classes and maintain an external XML file.
+             */
+
+            CacheConfig hzRawConfig = new CacheConfig(configuration);
+            hzRawConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+
+            EvictionConfig ec = new EvictionConfig(hzRawConfig.getEvictionConfig())
+                    .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT)
+                    .setSize(cacheSize);
+            hzRawConfig.setEvictionConfig(ec);
+
+            return cacheManager.createCache(cacheName, hzRawConfig);
         }
     }
 }

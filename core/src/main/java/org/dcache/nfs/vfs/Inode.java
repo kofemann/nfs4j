@@ -19,9 +19,12 @@
  */
 package org.dcache.nfs.vfs;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class Inode {
+public class Inode implements Serializable {
+
+    private static final long serialVersionUID = 7880833945175584062L;
 
     FileHandle fh;
 
