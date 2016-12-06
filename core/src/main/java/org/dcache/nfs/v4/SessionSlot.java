@@ -20,7 +20,9 @@
 package org.dcache.nfs.v4;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.DelayException;
 import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.status.RetryUncacheRepException;
 import org.dcache.nfs.status.SeqMisorderedException;
@@ -37,6 +39,11 @@ public class SessionSlot {
     private int _sequence;
     private List<nfs_resop4> _reply;
 
+    /**
+     * Indicate that current slot is in use by a request.
+     */
+    private AtomicBoolean _inUse = new AtomicBoolean(false);
+
     public SessionSlot() {
        _sequence = 0;
     }
@@ -48,7 +55,7 @@ public class SessionSlot {
      * @return true if retransmit is detected and cached reply available.
      * @throws ChimeraNFSException
      */
-    List<nfs_resop4> checkSlotSequence(int sequence, boolean checkCache) throws ChimeraNFSException {
+    public List<nfs_resop4> checkSlotSequence(int sequence, boolean checkCache) throws ChimeraNFSException {
 
         if( sequence == _sequence ) {
 
@@ -68,7 +75,6 @@ public class SessionSlot {
                     "/" + Integer.toHexString(sequence));
         }
 
-        _sequence = sequence;
         _reply = null;
         return null;
     }
@@ -76,4 +82,27 @@ public class SessionSlot {
     void update(List<nfs_resop4> reply) {
         _reply = reply;
     }
+
+    /**
+     * Acquires an exclusive access to this session slot.
+     * @throws DelayException if session slot is in use.
+     */
+    public void acquire() throws DelayException {
+        if (!_inUse.compareAndSet(false, true)) {
+            throw new DelayException("slot is in use");
+        }
+    }
+
+    /**
+     * Releases this session slot.
+     */
+    public void release() {
+        _inUse.set(true);
+    }
+
+    public void releaseAndIncrease() {
+        _sequence ++;
+        release();
+    }
+
 }

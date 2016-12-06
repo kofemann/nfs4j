@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -84,7 +84,7 @@ public class CompoundContext {
     private final ExportFile _exportFile;
     private final NFSv41DeviceManager _deviceManager;
     private final NFSv4StateHandler _stateHandler;
-    private int _slotId;
+    private SessionSlot _sessionSlot;
     private boolean _cacheThis;
     private final int _totalOperationsCount;
     private int _currentOpPosition = -1;
@@ -241,12 +241,12 @@ public class CompoundContext {
         return _stateHandler;
     }
 
-    public int getSlotId() {
-        return _slotId;
+    public SessionSlot getSessionSlot() {
+        return _sessionSlot;
     }
 
-    public void setSlotId(int slotId) {
-        _slotId = slotId;
+    public void setSessionSlot(SessionSlot slot) {
+        _sessionSlot = slot;
     }
 
     public boolean cacheThis() {

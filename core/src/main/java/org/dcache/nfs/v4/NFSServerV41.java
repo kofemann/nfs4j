@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -19,6 +19,8 @@
  */
 package org.dcache.nfs.v4;
 
+import java.net.InetSocketAddress;
+import java.nio.channels.CompletionHandler;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
@@ -89,6 +91,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
 
         COMPOUND4res res = new COMPOUND4res();
+        CompoundContext context = null;
 
         try {
 
@@ -119,7 +122,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
             res.resarray = new ArrayList<>(arg1.argarray.length);
 
             VirtualFileSystem fs = new PseudoFs(_fs, call$, _exportFile);
-            CompoundContext context = new CompoundContext(arg1.minorversion.value,
+            context = new CompoundContext(arg1.minorversion.value,
                 fs, _statHandler, _deviceManager, call$,
                     _exportFile, arg1.argarray.length);
 
@@ -179,7 +182,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
             }
 
             if (!retransmit && context.cacheThis()) {
-                context.getSession().updateSlotCache(context.getSlotId(), res.resarray);
+                context.getSessionSlot().update(res.resarray);
             }
 
             _log.debug( "OP: [{}] status: {}", res.tag, res.status);
@@ -193,6 +196,20 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
             res.resarray = Collections.emptyList();
             res.status = nfsstat.NFSERR_SERVERFAULT;
         }finally{
+            if (context != null && context.getSessionSlot() != null) {
+                final SessionSlot slot = context.getSessionSlot();
+                context.getRpcCall().registerSendListener(new CompletionHandler<Integer, InetSocketAddress>() {
+                    @Override
+                    public void completed(Integer result, InetSocketAddress attachment) {
+                        slot.releaseAndIncrease();
+                    }
+
+                    @Override
+                    public void failed(Throwable exc, InetSocketAddress attachment) {
+                        slot.release();
+                    }
+                });
+            }
             MDC.remove(NfsMdc.TAG);
             MDC.remove(NfsMdc.CLIENT);
             MDC.remove(NfsMdc.SESSION);

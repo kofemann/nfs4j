@@ -20,11 +20,9 @@
 package org.dcache.nfs.v4;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.v4.xdr.sessionid4;
-import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.status.BadSlotException;
 import org.dcache.utils.Bytes;
 
@@ -87,18 +85,13 @@ public class NFSv41Session {
         return id;
     }
 
-    public List<nfs_resop4> checkCacheSlot(int slot, int sequence, boolean checkCache)
-            throws ChimeraNFSException {
-        return getSlot(slot).checkSlotSequence(sequence, checkCache);
-    }
-
     /**
      * Get cache slot for given id.
-     * @param i
+     * @param slot
      * @return cache slot.
      * @throws ChimeraNFSException
      */
-    private SessionSlot getSlot(int slot) throws ChimeraNFSException {
+    public synchronized SessionSlot getSlot(int slot) throws ChimeraNFSException {
 
         if (slot < 0 || slot > getHighestSlot()) {
             throw new BadSlotException("slot id overflow");
@@ -131,10 +124,6 @@ public class NFSv41Session {
     @Override
     public String toString() {
         return _client.getRemoteAddress() + " : " + Bytes.toHexString(_session.value);
-    }
-
-    public void updateSlotCache(int slot, List<nfs_resop4> reply) throws ChimeraNFSException {
-        getSlot(slot).update(reply);
     }
 
     /**

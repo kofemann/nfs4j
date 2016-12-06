@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -55,8 +55,10 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
         }
 
         int opCount = context.getTotalOperationCount();
-        context.setCache(session.checkCacheSlot(_args.opsequence.sa_slotid.value,
-                _args.opsequence.sa_sequenceid.value, opCount > 1));
+        SessionSlot slot = session.getSlot(_args.opsequence.sa_slotid.value);
+        // slot will berlease on reply
+        slot.acquire();
+        context.setCache(slot.checkSlotSequence(_args.opsequence.sa_sequenceid.value, opCount > 1));
 
         session.bindIfNeeded( new SessionConnection(
                 context.getLocalSocketAddress(),
@@ -67,7 +69,7 @@ public class OperationSEQUENCE extends AbstractNFSv4Operation {
 
         context.setSession(session);
         context.setCacheThis(_args.opsequence.sa_cachethis);
-        context.setSlotId(_args.opsequence.sa_slotid.value);
+        context.setSessionSlot(slot);
 
         res.sr_resok4 = new SEQUENCE4resok();
 

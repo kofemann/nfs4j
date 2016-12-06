@@ -21,6 +21,7 @@ package org.dcache.nfs.v4;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.CompletionHandler;
 import java.util.Random;
 import javax.security.auth.Subject;
 import org.dcache.nfs.ExportFile;
@@ -36,13 +37,18 @@ public class CompoundContextBuilder {
         private final InetSocketAddress remote = new InetSocketAddress(rnd.nextInt(65535));
 
         @Override
-        public void send(Xdr xdr) throws IOException {
+        public ReplyQueue getReplyQueue() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public ReplyQueue getReplyQueue() {
-            throw new UnsupportedOperationException("Not supported yet.");
+        public <A> void send(Xdr xdr, A attachment, CompletionHandler<Integer, ? super A> handler) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public boolean isOpen() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
