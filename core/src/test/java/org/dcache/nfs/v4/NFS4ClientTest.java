@@ -35,12 +35,12 @@ import org.junit.Test;
 import org.dcache.nfs.vfs.Inode;
 
 import static org.dcache.nfs.v4.NfsTestUtils.createClient;
-import org.dcache.nfs.v4.xdr.clientid4;
 import org.dcache.nfs.v4.xdr.seqid4;
 import org.dcache.nfs.v4.xdr.state_owner4;
 import static org.dcache.nfs.v4.NfsTestUtils.generateRpcCall;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class NFS4ClientTest {
@@ -130,5 +130,11 @@ public class NFS4ClientTest {
         assertTrue(nfsClient.hasState());
     }
 
+    @Test
+    public void testCreateSessionReply() throws ChimeraNFSException {
+        NFSv41Session session1 = nfsClient.createSession(1, 0, 0, 0, 1);
+        NFSv41Session session2 = nfsClient.createSession(1, 0, 0, 0, 1);
+        assertEquals(session1.id(), session2.id());
+    }
 }
 
