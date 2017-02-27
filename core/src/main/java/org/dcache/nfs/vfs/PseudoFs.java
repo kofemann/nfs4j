@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ public class PseudoFs extends ForwardingFileSystem {
 
     public PseudoFs(VirtualFileSystem inner, RpcCall call, ExportFile exportFile) {
         _inner = inner;
-        _subject = call.getCredential().getSubject();
+        _subject = call.getSubject();
         _auth = call.getCredential();
         _inetAddress = call.getTransport().getRemoteSocketAddress().getAddress();
         _exportFile = exportFile;

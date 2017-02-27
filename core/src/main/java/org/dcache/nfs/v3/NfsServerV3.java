@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -511,7 +511,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             Inode hlink = new Inode(arg1.file.data);
 
             Stat parentStat = fs.getattr(parent);
-            fs.link(parent, hlink, name, call$.getCredential().getSubject());
+            fs.link(parent, hlink, name, call$.getSubject());
 
             res.resok = new LINK3resok();
             res.resok.file_attributes = new post_op_attr();
@@ -1323,7 +1323,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             sattr3 linkAttr = arg1.symlink.symlink_attributes;
 
             Stat parentStat = fs.getattr(parent);
-            Inode inode = fs.symlink(parent, file, link, call$.getCredential().getSubject(), 777);
+            Inode inode = fs.symlink(parent, file, link, call$.getSubject(), 777);
 
             HimeraNfsUtils.set_sattr(inode, fs, linkAttr);
 

@@ -34,6 +34,7 @@ import org.dcache.utils.Bytes;
 import org.dcache.xdr.RpcAuth;
 import org.dcache.xdr.RpcAuthTypeUnix;
 import org.dcache.xdr.RpcCall;
+import org.dcache.xdr.RpcLoginService;
 import org.dcache.xdr.XdrTransport;
 
 import static org.mockito.Mockito.mock;
@@ -91,6 +92,7 @@ class NfsTestUtils {
         RpcCall call = mock(RpcCall.class);
         given(call.getCredential()).willReturn(auth);
         given(call.getTransport()).willReturn(transport);
+        given(call.getSubject()).willReturn(RpcLoginService.DEFAULT_LOGIN_SERVICE.login(transport, auth.getPrincipals()));
 
         return call;
     }

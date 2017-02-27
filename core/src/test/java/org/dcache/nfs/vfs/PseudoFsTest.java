@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -86,7 +86,7 @@ public class PseudoFsTest {
     public void testRootSquash() throws IOException {
 
         given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
-        given(mockedAuth.getSubject()).willReturn(Subjects.ROOT);
+        given(mockedRpc.getSubject()).willReturn(Subjects.ROOT);
         given(mockedRpc.getTransport()).willReturn(mockedTransport);
         given(mockedRpc.getCredential()).willReturn(mockedAuth);
 
@@ -110,7 +110,7 @@ public class PseudoFsTest {
     public void testNoRootSquash() throws IOException {
 
         given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
-        given(mockedAuth.getSubject()).willReturn(Subjects.ROOT);
+        given(mockedRpc.getSubject()).willReturn(Subjects.ROOT);
         given(mockedRpc.getTransport()).willReturn(mockedTransport);
         given(mockedRpc.getCredential()).willReturn(mockedAuth);
 
@@ -133,7 +133,7 @@ public class PseudoFsTest {
     public void testAllSquash() throws IOException {
 
         given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
-        given(mockedAuth.getSubject()).willReturn(Subjects.of(1, 1));
+        given(mockedRpc.getSubject()).willReturn(Subjects.of(1, 1));
         given(mockedRpc.getTransport()).willReturn(mockedTransport);
         given(mockedRpc.getCredential()).willReturn(mockedAuth);
 
@@ -157,7 +157,7 @@ public class PseudoFsTest {
     public void testAuthFlavorTooWeak() throws IOException {
 
         given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
-        given(mockedAuth.getSubject()).willReturn(Subjects.ROOT);
+        given(mockedRpc.getSubject()).willReturn(Subjects.ROOT);
         given(mockedRpc.getTransport()).willReturn(mockedTransport);
         given(mockedRpc.getCredential()).willReturn(mockedAuth);
 
@@ -179,10 +179,10 @@ public class PseudoFsTest {
         RpcAuthGss mockedAuthGss = mock(RpcAuthGss.class);
 
         given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
-        given(mockedAuthGss.getSubject()).willReturn(Subjects.ROOT);
         given(mockedAuthGss.type()).willReturn(RpcAuthType.RPCGSS_SEC);
         given(mockedAuthGss.getService()).willReturn(RpcGssService.RPC_GSS_SVC_NONE);
 
+        given(mockedRpc.getSubject()).willReturn(Subjects.ROOT);
         given(mockedRpc.getTransport()).willReturn(mockedTransport);
         given(mockedRpc.getCredential()).willReturn(mockedAuthGss);
 
@@ -204,10 +204,10 @@ public class PseudoFsTest {
         RpcAuthGss mockedAuthGss = mock(RpcAuthGss.class);
 
         given(mockedTransport.getRemoteSocketAddress()).willReturn(localAddress);
-        given(mockedAuthGss.getSubject()).willReturn(Subjects.ROOT);
         given(mockedAuthGss.type()).willReturn(RpcAuthType.RPCGSS_SEC);
         given(mockedAuthGss.getService()).willReturn(RpcGssService.RPC_GSS_SVC_INTEGRITY);
 
+        given(mockedRpc.getSubject()).willReturn(Subjects.ROOT);
         given(mockedRpc.getTransport()).willReturn(mockedTransport);
         given(mockedRpc.getCredential()).willReturn(mockedAuthGss);
 

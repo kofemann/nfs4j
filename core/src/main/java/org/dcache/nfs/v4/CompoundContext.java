@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2016 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -111,7 +111,7 @@ public class CompoundContext {
         _deviceManager = deviceManager;
         _callInfo = call;
         _exportFile = exportFile;
-        _subject = call.getCredential().getSubject();
+        _subject = call.getSubject();
         _stateHandler = stateHandler;
         _principal = principalOf(call);
         _nlm = nlm;
@@ -331,7 +331,7 @@ public class CompoundContext {
         }
 
         Set<? extends Principal> principals =
-                call.getCredential().getSubject().getPrincipals(type);
+                call.getSubject().getPrincipals(type);
         return principals.isEmpty() ? NO_PRINCIPAL : principals.iterator().next();
     }
 
