@@ -21,6 +21,7 @@ package org.dcache.nfs.v4;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.InvalException;
 import org.dcache.nfs.status.OpenModeException;
 import org.dcache.nfs.status.ServerFaultException;
@@ -87,16 +88,34 @@ public class OperationLOCK extends AbstractNFSv4Operation {
             lockOwner = client.getOrCreateOwner(_args.oplock.locker.open_owner.lock_owner.owner, _args.oplock.locker.open_owner.lock_seqid);
             lock_state = client.createState(lockOwner, openState);
 
+            if (context.getMinorversion() == 0) {
+                // OSX workaround: keep extra lock owner to stateid mapping
+                client.bindLockOwnerToStateid(lock_state.stateid(), lockOwner);
+            }
+
             // lock states do not requires extra confirmation
             lock_state.confirm();
 
         } else {
             oldStateid = Stateids.getCurrentStateidIfNeeded(context, _args.oplock.locker.lock_owner.lock_stateid);
             client = context.getStateHandler().getClientIdByStateId(oldStateid);
-            lock_state = client.state(oldStateid);
-            Stateids.checkStateId(lock_state.stateid(), oldStateid);
+            // handle OSX bug: accept invalid stateid to diskover lock owner
+            try {
+                lock_state = client.state(oldStateid);
+                Stateids.checkStateId(lock_state.stateid(), oldStateid);
 
-            lockOwner = lock_state.getStateOwner();
+                lockOwner = lock_state.getStateOwner();
+            } catch (BadStateidException e) {
+
+                // try to guess lock owner and open state
+                lockOwner = client.getLockOwnerByStateid(oldStateid);
+                NFS4State openState = client.state(context.getStateHandler()
+                        .getFileTracker()
+                        .getOpen(client, lockOwner, inode));
+                lock_state = client.createState(lockOwner, openState);
+                _log.warn("Recoverd broken lock owner");
+            }
+
             if (context.getMinorversion() == 0) {
                 lockOwner.acceptAsNextSequence(_args.oplock.locker.lock_owner.lock_seqid);
             }

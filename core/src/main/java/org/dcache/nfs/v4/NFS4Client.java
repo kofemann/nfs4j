@@ -133,6 +133,18 @@ public class NFS4Client {
      * Open Owners associated with client.
      */
     private final Map<Opaque, StateOwner> _owners = new HashMap<>();
+
+    /**
+     * as current osx sierra (10.12.4) has bug, and sends lock request with
+     * old state ids, we need to keep track of state ids which was used when
+     * lock owner was created.
+     *
+     * REVISIT: this is a workaround OSX bug hand have to be removed when fix is
+     * provided
+     * @deprecated
+     */
+    @Deprecated
+    private final Map<stateid4, StateOwner> _lockOwnerByStateid = new HashMap<>();
     /*
 
     Client identification is encapsulated in the following structure:
@@ -554,4 +566,18 @@ public class NFS4Client {
             throw new StaleClientidException();
         }
     }
+
+    // workaround OSX bug
+    public synchronized void bindLockOwnerToStateid(stateid4 stateid, StateOwner stateOwner) {
+        _lockOwnerByStateid.put(stateid, stateOwner);
+    }
+
+    public synchronized StateOwner getLockOwnerByStateid(stateid4 stateid) {
+        return _lockOwnerByStateid.get(stateid);
+    }
+
+    public synchronized void unbindLockOwnerByStateid(stateid4 stateid) {
+        _lockOwnerByStateid.remove(stateid);
+    }
+
 }

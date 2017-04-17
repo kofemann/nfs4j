@@ -30,6 +30,7 @@ import java.util.concurrent.locks.Lock;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.InvalException;
+import org.dcache.nfs.status.OpenModeException;
 import org.dcache.nfs.status.ShareDeniedException;
 import org.dcache.nfs.v4.xdr.stateid4;
 import org.dcache.nfs.vfs.Inode;
@@ -140,6 +141,36 @@ public class FileTracker {
             opens.add(openState);
             state.addDisposeListener(s -> removeOpen(inode, stateid));
             return stateid;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public stateid4 getOpen(NFS4Client client, StateOwner owner, Inode inode) throws  ChimeraNFSException {
+
+        Opaque fileId = new Opaque(inode.getFileId());
+        Lock lock = filesLock.get(fileId);
+        lock.lock();
+        try {
+            /*
+             * check for existing opens on that file
+             * initialize new array with size of one, as this is what the majority of cases will be
+             */
+            final List<OpenState> opens = files.get(fileId);
+
+            // if there is an another open from the same client we must merge
+            // access mode and return the same stateid as required by rfc5661#18.16.3
+
+            System.out.printf("looking for: %s", owner.toString());
+            for (OpenState os : opens) {
+                System.out.println(os.getOwner());
+                if (os.client.getId() == client.getId() &&
+                        os.getOwner().equals(owner)) {
+                        return os.stateid;
+                }
+            }
+
+            throw new OpenModeException("No matching open");
         } finally {
             lock.unlock();
         }
