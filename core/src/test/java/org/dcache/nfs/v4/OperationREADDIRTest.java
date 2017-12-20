@@ -116,4 +116,29 @@ public class OperationREADDIRTest {
         OperationREADDIR readdirOp = new OperationREADDIR(op);
         readdirOp.process(context, result);
     }
+
+    @Test
+    public void testReadAllRecords() throws Exception {
+
+        verifier4 cookieVerifier = new verifier4(DirectoryStream.ZERO_VERIFIER);
+
+        // vfs will return only "." and ".." as contents, both leading to itself
+        List<DirectoryEntry> dirContents = new ArrayList<>();
+        dirContents.add(new DirectoryEntry(".", dirInode, dirStat, 1));
+        dirContents.add(new DirectoryEntry("..", dirInode, dirStat, 2));
+
+        for (int i = 0; i < 21; i++) {
+            dirContents.add(new DirectoryEntry("file" + i, dirInode, dirStat, 2 + 1));
+        }
+
+        Mockito.when(vfs.list(eq(dirInode), anyObject(), anyLong())).thenReturn(new DirectoryStream(cookieVerifier.value, dirContents));
+
+        nfs_argop4 op = new CompoundBuilder()
+                .withReaddir(0, cookieVerifier, 1024, 512)
+                .build().argarray[0];
+
+        OperationREADDIR readdirOp = new OperationREADDIR(op);
+        readdirOp.process(context, result);
+
+    }
 }
