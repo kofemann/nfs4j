@@ -45,6 +45,7 @@ import org.dcache.utils.CacheElement;
 import org.dcache.utils.NopCacheEventListener;
 
 import static com.google.common.base.Preconditions.checkState;
+import java.io.File;
 
 public class NFSv4StateHandler {
 
@@ -80,7 +81,7 @@ public class NFSv4StateHandler {
     private final ClientRecoveryStore clientStore;
 
     public NFSv4StateHandler() {
-        this(NFSv4Defaults.NFS4_LEASE_TIME, 0, new EphemeralClientRecoveryStore());
+        this(NFSv4Defaults.NFS4_LEASE_TIME, 0, new BerkeleyDBClientStore(new File("/tmp/nfs-state"), 90));
     }
 
     NFSv4StateHandler(long leaseTime, int instanceId, ClientRecoveryStore clientStore) {
