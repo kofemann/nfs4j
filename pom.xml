@@ -41,6 +41,7 @@
       <module>spring</module>
       <module>dlm</module>
       <module>benchmarks</module>
+      <module>rest-api</module>
   </modules>
 
   <build>
@@ -199,6 +200,25 @@
               <groupId>org.openjdk.jmh</groupId>
               <artifactId>jmh-generator-annprocess</artifactId>
               <version>1.21</version>
+          </dependency>
+              <groupId>org.glassfish.jersey.core</groupId>
+              <artifactId>jersey-server</artifactId>
+              <version>2.28</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.containers</groupId>
+              <artifactId>jersey-container-grizzly2-http</artifactId>
+              <version>2.28</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.media</groupId>
+              <artifactId>jersey-media-json-binding</artifactId>
+              <version>2.28</version>
+          </dependency>
+          <dependency>
+              <groupId>org.glassfish.jersey.inject</groupId>
+              <artifactId>jersey-hk2</artifactId>
+              <version>2.28</version>
           </dependency>
       </dependencies>
   </dependencyManagement>
