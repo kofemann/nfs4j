@@ -25,8 +25,11 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.common.collect.Multimaps;
@@ -102,12 +105,9 @@ public class ExportDB implements ExportTable {
 
         env.openDatabase(null, EXPORT_DB, dbConfig);
          */
-        System.out.println("new db!");
         exports = MultimapBuilder
                 .hashKeys()
-                .treeSetValues(Ordering
-                        .from(HostEntryComparator::compare)
-                        .onResultOf(FsExport::client))
+                .arrayListValues()
                 .build();
     }
 
@@ -152,13 +152,39 @@ public class ExportDB implements ExportTable {
         }
     }
 
-    public void addExport(String path, FsExport export) {
+    public void addExport(FsExport export) {
+        Lock lock = rwLock.writeLock();
+        lock.lock();
+        try {
+            exports.put(export.getIndex(), export);
+            exports.replaceValues(export.getIndex(),
+                    exports.get(export.getIndex())
+                            .stream().sorted(Ordering.from(HostEntryComparator::compare)
+                            .onResultOf(FsExport::client)).collect(Collectors.toList()));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void removeExport(String path) {
         String normalizedPath = FsExport.normalize(path);
         int index = FsExport.getExportIndex(normalizedPath);
         Lock lock = rwLock.writeLock();
         lock.lock();
         try {
-            exports.put(index, export);
+            exports.removeAll(index);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void removeExport(String path, String client) {
+        String normalizedPath = FsExport.normalize(path);
+        int index = FsExport.getExportIndex(normalizedPath);
+        Lock lock = rwLock.writeLock();
+        lock.lock();
+        try {
+            exports.replaceValues(index, exports.get(index).stream().filter(e -> e.client().equals(client)).collect(Collectors.toSet()));
         } finally {
             lock.unlock();
         }

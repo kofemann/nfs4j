@@ -9,7 +9,6 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import org.dcache.nfs.ExportDB;
-import org.dcache.nfs.ExportFile;
 
 /**
  *
@@ -27,12 +26,7 @@ public class Main {
      */
     public static HttpServer startServer() throws IOException {
 
-        ExportFile e = new ExportFile(new File("/tmp/exports"));
-
         ExportDB exportDB = new ExportDB(new File("/tmp"));
-
-        e.exports().forEach(i -> exportDB.addExport(i.getPath(), i));
-
         final ResourceConfig rc = new ResourceConfig()
                 .packages(Main.class.getPackage().getName())
                 .register(new ExportDbBinder(exportDB));
