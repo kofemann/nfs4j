@@ -19,8 +19,13 @@
  */
 package org.dcache.nfs.vfs;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.dcache.auth.Subjects;
 import org.dcache.nfs.ExportFile;
@@ -59,7 +64,10 @@ public class PseudoFsTest {
     @Before
     public void setUp() throws IOException {
 
-        mockedFs = mock(VirtualFileSystem.class);
+        FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
+        Path path = fs.getPath("/");
+
+        mockedFs = new DummyVFS(path);
         mockedExportFile = mock(ExportFile.class);
         mockedTransport = mock(RpcTransport.class);
         mockedRpc = mock(RpcCall.class);
