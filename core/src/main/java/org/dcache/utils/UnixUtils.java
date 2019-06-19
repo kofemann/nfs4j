@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2017 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2019 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -19,14 +19,14 @@
  */
 package org.dcache.utils;
 
+import com.sun.security.auth.UnixNumericGroupPrincipal;
+import com.sun.security.auth.UnixNumericUserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import javax.security.auth.Subject;
-import org.dcache.auth.GidPrincipal;
-import org.dcache.auth.UidPrincipal;
 
 public class UnixUtils {
     private static final Logger _log = LoggerFactory.getLogger(UnixUtils.class);
@@ -45,12 +45,12 @@ public class UnixUtils {
 
             Subject subject = new Subject();
 
-            subject.getPrincipals().add(new UidPrincipal((Long) getUidMethod.invoke(unixSystemInstance)) );
-            subject.getPrincipals().add(new GidPrincipal((Long) getGidMethod.invoke(unixSystemInstance), true));
+            subject.getPrincipals().add(new UnixNumericUserPrincipal((Long) getUidMethod.invoke(unixSystemInstance)) );
+            subject.getPrincipals().add(new UnixNumericGroupPrincipal((Long) getGidMethod.invoke(unixSystemInstance), true));
             long[] groups = (long[]) getGroupsMethod.invoke(unixSystemInstance);
 
             for (long gid: groups) {
-                subject.getPrincipals().add(new GidPrincipal(gid, false));
+                subject.getPrincipals().add(new UnixNumericGroupPrincipal(gid, false));
             }
             return subject;
 

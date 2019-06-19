@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2018 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2019 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -19,7 +19,6 @@
  */
 package org.dcache.nfs.v3;
 
-import org.dcache.auth.Subjects;
 import org.dcache.nfs.ExportFile;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.ChimeraNFSException;
@@ -140,6 +139,7 @@ import org.dcache.nfs.status.*;
 import org.dcache.oncrpc4j.util.Bytes;
 import org.dcache.oncrpc4j.rpc.OncRpcException;
 import org.dcache.oncrpc4j.rpc.RpcCall;
+import org.dcache.utils.UnixSubjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -302,7 +302,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             if (newAttr != null) {
                 fmode = newAttr.mode.mode.value.value | Stat.S_IFREG;
                 if( newAttr.uid.set_it || newAttr.gid.set_it) {
-                    actualSubject = Subjects.of(newAttr.uid.uid.value.value, newAttr.gid.gid.value.value);
+                    actualSubject = UnixSubjects.of(newAttr.uid.uid.value.value, newAttr.gid.gid.value.value);
                 }
             }
             inode = fs.create(parent, Stat.Type.REGULAR, path, actualSubject, fmode);
@@ -602,7 +602,7 @@ public class NfsServerV3 extends nfs3_protServerStub {
             if (attr != null) {
                 mode = attr.mode.mode.value.value | Stat.S_IFDIR;
                 if( attr.uid.set_it || attr.gid.set_it) {
-                    actualSubject = Subjects.of(attr.uid.uid.value.value, attr.gid.gid.value.value);
+                    actualSubject = UnixSubjects.of(attr.uid.uid.value.value, attr.gid.gid.value.value);
                 }
             }
 

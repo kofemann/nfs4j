@@ -19,6 +19,7 @@
  */
 package org.dcache.nfs.v4;
 
+import com.sun.security.auth.UnixNumericUserPrincipal;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import org.dcache.nfs.ChimeraNFSException;
@@ -33,7 +34,6 @@ import java.util.Optional;
 import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
-import org.dcache.auth.UidPrincipal;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.NoFileHandleException;
@@ -321,7 +321,7 @@ public class CompoundContext {
         if(call.getCredential().type() == RpcAuthType.RPCGSS_SEC) {
             type = KerberosPrincipal.class;
         } else {
-            type = UidPrincipal.class;
+            type = UnixNumericUserPrincipal.class;
         }
 
         Set<? extends Principal> principals =
