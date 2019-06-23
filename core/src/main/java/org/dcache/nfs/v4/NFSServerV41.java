@@ -19,6 +19,8 @@
  */
 package org.dcache.nfs.v4;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.ExportTable;
 import org.dcache.nfs.ExportFile;
@@ -34,13 +36,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.vfs.PseudoFs;
 import org.dcache.nfs.vfs.VirtualFileSystem;
-import org.dcache.commons.stats.RequestExecutionTimeGauges;
 import org.dcache.nfs.status.BadSessionException;
 import org.dcache.nfs.status.BadStateidException;
 import org.dcache.nfs.status.BadXdrException;
@@ -66,15 +68,18 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
 
     private static final Logger _log = LoggerFactory.getLogger(NFSServerV41.class);
 
-    private static final RequestExecutionTimeGauges<String> GAUGES
-            = new RequestExecutionTimeGauges<>(NFSServerV41.class.getName());
-
     private final VirtualFileSystem _fs;
     private final ExportTable _exportTable;
     private final NFSv4OperationFactory _operationFactory;
     private final NFSv41DeviceManager _deviceManager;
     private final NFSv4StateHandler _statHandler;
     private final LockManager _nlm;
+
+    /**
+     * 
+     */
+    private final RequestExectionWrapper _requestExecutor;
+
     /**
      * Verifier to indicate client that server is rebooted. Current currentTimeMillis
      * is good enough, unless server reboots within a millisecond.
@@ -88,6 +93,20 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         _operationFactory = builder.operationFactory;
         _nlm = builder.nlm == null ? new SimpleLm() : builder.nlm;
         _statHandler = builder.stateHandler == null ? new NFSv4StateHandler() : builder.stateHandler;
+
+        if (builder.metricRegistry == null) {
+            _requestExecutor = (c, a, r) -> _operationFactory.getOperation(a).process(c, r);
+        } else {
+            _requestExecutor = (c, a, r) -> {
+                final Timer timer = builder.metricRegistry.timer(nfs_opnum4.toString(a.argop));
+                final Timer.Context timerContext = timer.time();
+                try {
+                    _operationFactory.getOperation(a).process(c, r);
+                } finally {
+                    timerContext.stop();
+                }
+            };
+        }
     }
 
     @Deprecated
@@ -101,6 +120,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         _operationFactory = operationFactory;
         _nlm = new SimpleLm();
         _statHandler = new NFSv4StateHandler();
+        _requestExecutor = (c, a, r) -> _operationFactory.getOperation(a).process(c, r);
     }
 
     @Override
@@ -201,9 +221,8 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
                             }
                         }
                     }
-                    long t0 = System.nanoTime();
-                    _operationFactory.getOperation(op).process(context, opResult);
-                    GAUGES.update(nfs_opnum4.toString(op.argop), System.nanoTime() - t0);
+
+                    _requestExecutor.execute(context, op, opResult);
 
                 } catch (NfsIoException | ResourceException | ServerFaultException e) {
                     _log.error("NFS server fault: op: {} : {}", nfs_opnum4.toString(op.argop), e.getMessage());
@@ -318,10 +337,6 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         return ops.get(ops.size() -1).getStatus();
     }
 
-    public RequestExecutionTimeGauges<String> getStatistics() {
-        return GAUGES;
-    }
-
     public static class Builder {
 
         private NFSv4OperationFactory operationFactory;
@@ -330,6 +345,7 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
         private ExportTable exportTable;
         private LockManager nlm;
         private NFSv4StateHandler stateHandler;
+        private MetricRegistry metricRegistry;
 
         public Builder withDeviceManager(NFSv41DeviceManager deviceManager) {
             this.deviceManager = deviceManager;
@@ -369,8 +385,19 @@ public class NFSServerV41 extends nfs4_prot_NFS4_PROGRAM_ServerStub {
             return this;
         }
 
+        public Builder withMetricRegistry(MetricRegistry metricRegistry) {
+            this.metricRegistry = metricRegistry;
+            return this;
+        }
+
         public NFSServerV41 build() {
             return new NFSServerV41(this);
         }
+    }
+
+    @FunctionalInterface
+    private interface RequestExectionWrapper {
+        void execute(CompoundContext context, nfs_argop4 args, nfs_resop4 res)
+                throws IOException, OncRpcException;
     }
 }

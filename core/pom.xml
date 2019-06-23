@@ -62,6 +62,10 @@
     -->
     <dependencies>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.google.jimfs</groupId>
             <artifactId>jimfs</artifactId>
             <scope>test</scope>
