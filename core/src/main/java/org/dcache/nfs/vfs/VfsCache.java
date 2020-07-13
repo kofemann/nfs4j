@@ -99,12 +99,12 @@ public class VfsCache extends ForwardingFileSystem {
     @Override
     public void commit(Inode inode, long offset, int count) throws IOException {
         invalidateStatCache(inode);
-        _inner.commit(inode, offset, count);
+        delegate().commit(inode, offset, count);
     }
 
     @Override
     public Inode symlink(Inode parent, String path, String link, Subject subject, int mode) throws IOException {
-        Inode inode = _inner.symlink(parent, path, link, subject, mode);
+        Inode inode = delegate().symlink(parent, path, link, subject, mode);
 	invalidateStatCache(parent);
 	return inode;
     }
@@ -112,7 +112,7 @@ public class VfsCache extends ForwardingFileSystem {
     @Override
     public void remove(Inode parent, String path) throws IOException {
 	Inode inode = lookup(parent, path);
-        _inner.remove(parent, path);
+        delegate().remove(parent, path);
         invalidateLookupCache(parent, path);
 	invalidateStatCache(parent);
 	invalidateStatCache(inode);
@@ -126,7 +126,7 @@ public class VfsCache extends ForwardingFileSystem {
     @Override
     public boolean move(Inode src, String oldName, Inode dest, String newName) throws IOException {
 
-        boolean isChanged = _inner.move(src, oldName, dest, newName);
+        boolean isChanged = delegate().move(src, oldName, dest, newName);
 	if (isChanged) {
 	    invalidateLookupCache(src, oldName);
 	    invalidateLookupCache(dest, newName);
@@ -138,7 +138,7 @@ public class VfsCache extends ForwardingFileSystem {
 
     @Override
     public Inode mkdir(Inode parent, String path, Subject subject, int mode) throws IOException {
-        Inode inode = _inner.mkdir(parent, path, subject, mode);
+        Inode inode = delegate().mkdir(parent, path, subject, mode);
         updateLookupCache(parent, path, inode);
 	invalidateStatCache(parent);
         return inode;
@@ -146,7 +146,7 @@ public class VfsCache extends ForwardingFileSystem {
 
     @Override
     public Inode link(Inode parent, Inode link, String path, Subject subject) throws IOException {
-        Inode inode = _inner.link(parent, link, path, subject);
+        Inode inode = delegate().link(parent, link, path, subject);
         updateLookupCache(parent, path, inode);
 	invalidateStatCache(parent);
 	invalidateStatCache(inode);
@@ -165,7 +165,7 @@ public class VfsCache extends ForwardingFileSystem {
 
     @Override
     public Inode create(Inode parent, Stat.Type type, String path, Subject subject, int mode) throws IOException {
-        Inode inode = _inner.create(parent, type, path, subject, mode);
+        Inode inode = delegate().create(parent, type, path, subject, mode);
         updateLookupCache(parent, path, inode);
 	invalidateStatCache(parent);
         updateParentCache(inode, parent);
@@ -179,18 +179,18 @@ public class VfsCache extends ForwardingFileSystem {
 
     @Override
     public void setattr(Inode inode, Stat stat) throws IOException {
-        _inner.setattr(inode, stat);
+        delegate().setattr(inode, stat);
 	invalidateStatCache(inode);
     }
 
     @Override
     public boolean getCaseInsensitive() {
-        return _inner.getCaseInsensitive();
+        return delegate().getCaseInsensitive();
     }
 
     @Override
     public boolean getCasePreserving() {
-        return _inner.getCasePreserving();
+        return delegate().getCasePreserving();
     }
 
     /*
@@ -228,7 +228,7 @@ public class VfsCache extends ForwardingFileSystem {
 
         @Override
         public Inode load(CacheKey k) throws Exception {
-            return _inner.lookup(k.getParent(), k.getName());
+            return delegate().lookup(k.getParent(), k.getName());
         }
     }
 
@@ -244,7 +244,7 @@ public class VfsCache extends ForwardingFileSystem {
 
     private Stat statFromCacheOrLoad(final Inode inode) throws IOException {
 	try {
-	    return _statCache.get(new Opaque(inode.getFileId()), () -> _inner.getattr(inode));
+	    return _statCache.get(new Opaque(inode.getFileId()), () -> delegate().getattr(inode));
 	} catch (ExecutionException e) {
 	    Throwable t = e.getCause();
 	    Throwables.throwIfInstanceOf(t, IOException.class);
@@ -256,7 +256,7 @@ public class VfsCache extends ForwardingFileSystem {
 
         @Override
         public Inode load(Inode inode) throws Exception {
-            return _inner.parentOf(inode);
+            return delegate().parentOf(inode);
         }
     }
 
@@ -349,7 +349,7 @@ public class VfsCache extends ForwardingFileSystem {
         @Override
         public FsStat get() {
             try {
-                return _inner.getFsStat();
+                return delegate().getFsStat();
             }catch (IOException e) {
                 // not true, but good enough.
                 return new FsStat(0, 0, 0, 0);
@@ -384,13 +384,13 @@ public class VfsCache extends ForwardingFileSystem {
 
     @Override
     public void removeXattr(Inode inode, String attr) throws IOException {
-        _inner.removeXattr(inode, attr);
+        delegate().removeXattr(inode, attr);
         invalidateStatCache(inode);
     }
 
     @Override
     public void setXattr(Inode inode, String attr, byte[] value, SetXattrMode mode) throws IOException {
-        _inner.setXattr(inode, attr, value, mode);
+        delegate().setXattr(inode, attr, value, mode);
         invalidateStatCache(inode);
     }
 }
