@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2020 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2024 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -77,6 +77,8 @@ public class FsExport {
     private final List<layouttype4> _layoutTypes;
     private final boolean _requirePrivilegedClientPort;
 
+    private final String _referal;
+
     /**
      * NFS clients may be specified in a number of ways:<br>
      * <p>
@@ -129,6 +131,7 @@ public class FsExport {
         _index = getExportIndex(_path);
         _layoutTypes = List.copyOf(builder.getLayoutTypes());
         _requirePrivilegedClientPort = builder.isPrivilegedClientPortRequired();
+        _referal = builder.getReferral();
     }
 
     public static int getExportIndex(String path) {
@@ -167,15 +170,18 @@ public class FsExport {
         if (_allSquash) {
             sb.append(",all_squash");
         }
-	if (!_layoutTypes.isEmpty()) {
-	    sb.append(
-		_layoutTypes.stream()
-		.map(Object::toString)
-		.map(s -> s.substring("LAYOUT4_".length()))
-		.map(String::toLowerCase)
-		.collect(Collectors.joining(":", ",lt=", ""))
-	    );
-	}
+        if (!_layoutTypes.isEmpty()) {
+            sb.append(
+                    _layoutTypes.stream()
+                            .map(Object::toString)
+                            .map(s -> s.substring("LAYOUT4_".length()))
+                            .map(String::toLowerCase)
+                            .collect(Collectors.joining(":", ",lt=", ""))
+            );
+        }
+        if (_referal != null) {
+            sb.append(",refer=").append(_referal);
+        }
         sb.append(',')
             .append("anonuid=")
             .append(_anonUid);
@@ -248,6 +254,24 @@ public class FsExport {
     }
 
     /**
+     * Get the referral to another nfs server.
+     *
+     * @return the referral or null if this export is not a referral.
+     */
+    public String getReferral() {
+        return _referal;
+    }
+
+    /**
+     * Check if this export is a referral to another nfs server;
+     *
+     * @return true if this export is a referral.
+     */
+    public boolean isReferral() {
+        return _referal != null;
+    }
+
+    /**
      * Get an ordered list of layout types to be used by this export entry.
      *
      * @return an ordered list of layout types to be offerent to the client.
@@ -283,6 +307,7 @@ public class FsExport {
         hash = 83 * hash + this._index;
         hash = 83 * hash + (this._withPnfs ? 1 : 0);
         hash = 83 * hash + Objects.hashCode(this._layoutTypes);
+        hash = 83 * hash + Objects.hashCode(_referal);
         return hash;
     }
 
@@ -340,6 +365,9 @@ public class FsExport {
         if (!Objects.equals(this._layoutTypes, other._layoutTypes)) {
             return false;
         }
+        if (this._referal == null && other._referal != null) {
+            return false;
+        }
         return true;
     }
 
@@ -359,6 +387,17 @@ public class FsExport {
         private boolean _withPnfs = true;
 	private final List<layouttype4> _layoutTypes = new ArrayList<>();
         private boolean _requirePrivilegedClientPort;
+
+        private String _referral;
+
+        public FsExportBuilder withReferral(String referral) {
+            _referral = referral;
+            return this;
+        }
+
+        public String getReferral() {
+            return _referral;
+        }
 
         public FsExportBuilder forClient(String client) {
             checkArgument(isValidHostSpecifier(client), "bad host specifier: " + client);

@@ -2,6 +2,7 @@ package org.dcache.nfs.v4;
 
 import java.io.IOException;
 import org.dcache.nfs.status.InvalException;
+import org.dcache.nfs.status.MovedException;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.nfs_lock_type4;
 import org.junit.Test;
@@ -15,10 +16,11 @@ public class OperationLOCKUTest {
 
     private NFSv4StateHandler stateHandler;
     private Inode inode = Inode.forFile(new byte[]{1, 2, 3, 4});
-    private nfs_fh4 fh = new nfs_fh4(inode.toNfsHandle());
+    private nfs_fh4 fh;
 
     @Before
-    public void setUp() {
+    public void setUp() throws MovedException {
+        fh = new nfs_fh4(inode.toNfsHandle());
         stateHandler = new NFSv4StateHandler();
     }
 

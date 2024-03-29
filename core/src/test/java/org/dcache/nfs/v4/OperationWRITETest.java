@@ -3,6 +3,7 @@ package org.dcache.nfs.v4;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import org.dcache.nfs.ChimeraNFSException;
+import org.dcache.nfs.status.MovedException;
 import org.dcache.nfs.v4.xdr.COMPOUND4args;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.vfs.Inode;
@@ -23,12 +24,12 @@ import org.dcache.nfs.v4.xdr.COMPOUND4res;
 public class OperationWRITETest {
 
     private Inode inode = Inode.forFile(new byte[]{1, 2, 3, 4});
-    private nfs_fh4 fh = new nfs_fh4(inode.toNfsHandle());
+    private nfs_fh4 fh;
     private VirtualFileSystem vfs;
     private Stat fileStat;
 
     @Before
-    public void setUp() {
+    public void setUp() throws MovedException {
 
         fileStat = new Stat();
         fileStat.setMode(Stat.S_IFREG | 0755);
@@ -43,6 +44,7 @@ public class OperationWRITETest {
         fileStat.setIno(1);
         fileStat.setSize(512);
 
+        fh = new nfs_fh4(inode.toNfsHandle());
         vfs = mock(VirtualFileSystem.class);
     }
 

@@ -530,7 +530,7 @@ public class PseudoFs extends ForwardingFileSystem {
             if (node.id().equals(parent)) {
                 PseudoFsNode n = node.getChild(name);
                 if (n != null) {
-                    return n.isMountPoint() ? pseudoIdToReal(n.id(), getIndexId(n)) : n.id();
+                    return n.isMountPoint() ? pseudoIdToReal(n.id(), n) : n.id();
                 }
             }
         }
@@ -551,7 +551,18 @@ public class PseudoFs extends ForwardingFileSystem {
         return new Inode(fh);
     }
 
-    private int getIndexId(PseudoFsNode node) {
+    public static Inode pseudoIdToReal(Inode inode, PseudoFsNode node) {
+
+        FsExport export = node.getExports().get(0);
+        int index = export.getIndex();
+        FileHandle fh = new FileHandle.FileHandleBuilder()
+                .setExportIdx(index)
+                .setType(export.isReferral() ? 2 : 0)
+                .build(inode.getFileId());
+        return new Inode(fh);
+    }
+
+    private static int getIndexId(PseudoFsNode node) {
         List<FsExport> exports = node.getExports();
         return exports.get(0).getIndex();
     }
@@ -602,7 +613,7 @@ public class PseudoFs extends ForwardingFileSystem {
                         Stat stat = _inner.getattr(inode);
                         DirectoryEntry e = new DirectoryEntry(s,
                                 subNode.isMountPoint()
-                                ? pseudoIdToReal(inode, getIndexId(subNode)) : inode, stat, cookie);
+                                ? pseudoIdToReal(inode, subNode) : inode, stat, cookie);
                         pseudoLs.add(e);
                         cookie++;
                     }

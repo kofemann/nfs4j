@@ -26,10 +26,19 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+import org.dcache.nfs.FsExport;
+import org.dcache.nfs.v4.xdr.component4;
+import org.dcache.nfs.v4.xdr.fattr4_fs_locations;
+import org.dcache.nfs.v4.xdr.fs_location4;
+import org.dcache.nfs.v4.xdr.fs_locations4;
+import org.dcache.nfs.v4.xdr.pathname4;
+import org.dcache.nfs.v4.xdr.utf8str_cis;
 
 public class Misc {
 
@@ -66,4 +75,35 @@ public class Misc {
 
         return Optional.empty();
     }
+
+    /**
+     * Parse string form of remote filesystem location into an array of {@link fs_location4}.
+     * The expected form:
+     *
+     * <pre>
+     *     path@host[+host][:path@host[+host]]
+     * </pre>
+     *
+     * @param locations the string form of locations
+     * @return an array of fs_location
+     */
+    public static fs_location4[] parseFsLocations(String locations) {
+
+        List<fs_location4> l = new ArrayList<>();
+
+        // format: path@host[+host][:path@host[+host]]
+        String[] referrals = locations.split(":");
+        for(String referral: referrals) {
+            var fsLocation = new fs_location4();
+            // FIXME: handle multiple hosts
+            String[] split = referral.split("@", 2);
+            fsLocation.server = new utf8str_cis[]{new utf8str_cis(split[1])};
+            fsLocation.rootpath = new pathname4(new component4[]{new component4(split[0])});
+            l.add(fsLocation);
+        }
+
+        return l.toArray(fs_location4[]::new);
+    }
+
+
 }

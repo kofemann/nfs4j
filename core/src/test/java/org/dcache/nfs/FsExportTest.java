@@ -295,4 +295,10 @@ public class FsExportTest {
         assertFalse("Incorrect default secure option", export.isPrivilegedClientPortRequired());
     }
 
+    @Test
+    public void testReferral() throws Exception {
+        FsExport export = _exportFile.getExport("/data/referral", InetAddress.getByName("192.168.17.1"));
+
+        assertTrue("Referral ist not recognized", export.isReferral());
+    }
 }

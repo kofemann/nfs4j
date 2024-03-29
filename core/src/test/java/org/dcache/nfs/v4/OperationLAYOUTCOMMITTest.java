@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class OperationLAYOUTCOMMITTest {
 
     private final Inode inode = Inode.forFile(new byte[]{1, 2, 3, 4});
-    private final nfs_fh4 fh = new nfs_fh4(inode.toNfsHandle());
+    private nfs_fh4 fh;
 
     private NFSv4StateHandler sh;
     private VirtualFileSystem vfs;
@@ -44,6 +44,7 @@ public class OperationLAYOUTCOMMITTest {
 
     @Before
     public void setUp() throws Exception {
+        fh = new nfs_fh4(inode.toNfsHandle());
         sh = new NFSv4StateHandler();
         vfs = mock(VirtualFileSystem.class);
         dm = mock(NFSv41DeviceManager.class);

@@ -293,6 +293,11 @@ public class ExportFile implements ExportTable {
                             continue;
                         }
 
+                        if (option.startsWith("refer=")) {
+                            exportBuilder.withReferral(option.substring(6));
+                            continue;
+                        }
+
                         throw new IllegalArgumentException("Unsupported option: " + option);
                     }
                     FsExport export = exportBuilder.build(path);

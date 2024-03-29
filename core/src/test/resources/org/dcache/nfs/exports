@@ -33,3 +33,4 @@ not/absolute/path
 /secure 192.168.17.0/24(secure)
 /insecure 192.168.17.0/24(insecure)
 /secure_default 192.168.17.0/24
+/data/referral *(refer=/path/on/target@target)

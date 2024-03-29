@@ -19,6 +19,8 @@
  */
 package org.dcache.nfs.vfs;
 
+import org.dcache.nfs.status.MovedException;
+
 import java.util.Arrays;
 
 public class Inode {
@@ -41,7 +43,12 @@ public class Inode {
         return fh.getFsOpaque();
     }
 
-    public byte[] toNfsHandle() {
+    public byte[] toNfsHandle() throws MovedException {
+
+        if (fh.getType() == 2) {
+            throw new MovedException();
+        }
+
         return fh.bytes();
     }
 
@@ -64,6 +71,10 @@ public class Inode {
 
     public boolean isPseudoInode() {
         return fh.getType() == 1;
+    }
+
+    public boolean isReferral() {
+        return fh.getType() == 2;
     }
 
     public int exportIndex() {

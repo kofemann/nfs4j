@@ -25,76 +25,17 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.dcache.nfs.v4.xdr.fattr4_numlinks;
-import org.dcache.nfs.v4.xdr.fattr4_aclsupport;
-import org.dcache.nfs.v4.xdr.nfs_ftype4;
-import org.dcache.nfs.v4.xdr.attrlist4;
-import org.dcache.nfs.v4.xdr.fattr4_case_insensitive;
-import org.dcache.nfs.v4.xdr.nfs_fh4;
-import org.dcache.nfs.v4.xdr.fattr4_rawdev;
-import org.dcache.nfs.v4.xdr.fattr4_maxname;
-import org.dcache.nfs.v4.xdr.fattr4_owner;
-import org.dcache.nfs.v4.xdr.fattr4_space_used;
-import org.dcache.nfs.v4.xdr.fattr4_maxlink;
-import org.dcache.nfs.v4.xdr.fattr4_unique_handles;
-import org.dcache.nfs.v4.xdr.fattr4_xattr_support;
-import org.dcache.nfs.v4.xdr.fattr4_lease_time;
-import org.dcache.nfs.v4.xdr.uint64_t;
-import org.dcache.nfs.v4.xdr.fattr4_fh_expire_type;
-import org.dcache.nfs.v4.xdr.nfs_opnum4;
-import org.dcache.nfs.v4.xdr.nfsace4;
-import org.dcache.nfs.v4.xdr.fattr4_named_attr;
-import org.dcache.nfs.v4.xdr.specdata4;
-import org.dcache.nfs.v4.xdr.bitmap4;
-import org.dcache.nfs.v4.xdr.nfs_argop4;
-import org.dcache.nfs.v4.xdr.fattr4_homogeneous;
-import org.dcache.nfs.v4.xdr.fattr4_maxread;
-import org.dcache.nfs.v4.xdr.fattr4_fs_layout_types;
-import org.dcache.nfs.v4.xdr.fattr4_maxwrite;
-import org.dcache.nfs.v4.xdr.fattr4_time_create;
-import org.dcache.nfs.v4.xdr.fattr4_files_avail;
-import org.dcache.nfs.v4.xdr.fattr4_mounted_on_fileid;
-import org.dcache.nfs.v4.xdr.fattr4_space_total;
-import org.dcache.nfs.v4.xdr.fattr4_fileid;
-import org.dcache.nfs.v4.xdr.fattr4_change;
-import org.dcache.nfs.v4.xdr.fattr4_symlink_support;
-import org.dcache.nfs.v4.xdr.nfs4_prot;
-import org.dcache.nfs.v4.xdr.fattr4_case_preserving;
-import org.dcache.nfs.v4.xdr.fattr4_size;
-import org.dcache.nfs.v4.xdr.fattr4_files_total;
-import org.dcache.nfs.v4.xdr.fattr4_filehandle;
-import org.dcache.nfs.v4.xdr.fattr4;
-import org.dcache.nfs.v4.xdr.fattr4_link_support;
-import org.dcache.nfs.v4.xdr.fattr4_time_modify;
-import org.dcache.nfs.v4.xdr.fattr4_no_trunc;
-import org.dcache.nfs.v4.xdr.fattr4_rdattr_error;
-import org.dcache.nfs.v4.xdr.fattr4_files_free;
-import org.dcache.nfs.v4.xdr.fattr4_time_metadata;
-import org.dcache.nfs.v4.xdr.fattr4_mode;
-import org.dcache.nfs.v4.xdr.fattr4_maxfilesize;
-import org.dcache.nfs.v4.xdr.fattr4_acl;
+import org.dcache.nfs.FsExport;
+import org.dcache.nfs.status.MovedException;
+import org.dcache.nfs.util.Misc;
+import org.dcache.nfs.v4.xdr.*;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
-import org.dcache.nfs.v4.xdr.fattr4_fsid;
-import org.dcache.nfs.v4.xdr.fattr4_time_access;
-import org.dcache.nfs.v4.xdr.fattr4_supported_attrs;
-import org.dcache.nfs.v4.xdr.utf8str_mixed;
-import org.dcache.nfs.v4.xdr.fattr4_space_free;
-import org.dcache.nfs.v4.xdr.fattr4_cansettime;
-import org.dcache.nfs.v4.xdr.fattr4_type;
-import org.dcache.nfs.v4.xdr.fsid4;
-import org.dcache.nfs.v4.xdr.layouttype4;
-import org.dcache.nfs.v4.xdr.GETATTR4resok;
-import org.dcache.nfs.v4.xdr.GETATTR4res;
 
 import org.dcache.nfs.vfs.Stat.StatAttribute;
 import org.dcache.oncrpc4j.xdr.XdrAble;
 import org.dcache.oncrpc4j.xdr.Xdr;
 import org.dcache.nfs.status.InvalException;
-import org.dcache.nfs.v4.xdr.fattr4_space_avail;
-import org.dcache.nfs.v4.xdr.fattr4_time_delta;
-import org.dcache.nfs.v4.xdr.nfstime4;
-import org.dcache.nfs.v4.xdr.nfs_resop4;
 import org.dcache.nfs.vfs.FsStat;
 import org.dcache.nfs.vfs.Inode;
 import org.dcache.nfs.vfs.VirtualFileSystem;
@@ -169,6 +110,48 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
         return getAttributes(bitmap, fs, inode, context.getFs().getattr(inode), context);
     }
 
+    private static fattr4 getReferralAttributes(bitmap4 bitmap, VirtualFileSystem fs, Inode inode, FsExport export, CompoundContext context) throws IOException {
+        /*
+         * bitmap we send back. can't be uninitialized.
+         */
+        bitmap4 processedAttributes = new bitmap4(new int[0]);
+
+        byte[] retBytes;
+        try (Xdr xdr = new Xdr(1024)) {
+            xdr.beginEncoding();
+
+            for (int i : bitmap) {
+
+                XdrAble attr;
+                switch (i) {
+                    case nfs4_prot.FATTR4_MOUNTED_ON_FILEID:
+                        attr = new fattr4_mounted_on_fileid(1234567);
+                        break;
+                    case nfs4_prot.FATTR4_FSID:
+                        fsid4 fsid = new fsid4();
+                        fsid.major = new uint64_t(17);
+                        fsid.minor = new uint64_t(17);
+                        attr = new fattr4_fsid(fsid);
+                        break;
+                    default:
+                        throw new MovedException();
+
+                }
+
+                attr.xdrEncode(xdr);
+            }
+
+            xdr.endEncoding();
+            retBytes = xdr.getBytes();
+        }
+
+        fattr4 attributes = new fattr4();
+        attributes.attrmask = processedAttributes;
+        attributes.attr_vals = new attrlist4(retBytes);
+
+        return attributes;
+    }
+
     private static FsStat getFsStat(FsStat fsStat, VirtualFileSystem fs) throws IOException {
         if (fsStat != null) {
             return fsStat;
@@ -224,9 +207,13 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 fattr4_named_attr named_attr = new fattr4_named_attr(false);
                 return Optional.of(named_attr);
             case nfs4_prot.FATTR4_FSID:
+                long magic = 17;
+                if (inode.isReferral()) {
+                    magic++;
+                }
                 fsid4 fsid = new fsid4();
-                fsid.major = new uint64_t(17);
-                fsid.minor = new uint64_t(17);
+                fsid.major = new uint64_t(magic);
+                fsid.minor = new uint64_t(magic);
                 return Optional.of(new fattr4_fsid(fsid));
             case nfs4_prot.FATTR4_UNIQUE_HANDLES:
                 return Optional.of(new fattr4_unique_handles(true));
@@ -270,7 +257,11 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
                 fsStat = getFsStat(fsStat, fs);
                 return Optional.of(new fattr4_files_total(fsStat.getTotalFiles()));
             case nfs4_prot.FATTR4_FS_LOCATIONS:
-                return Optional.empty();
+                FsExport export = context.getExportTable().getExport(inode.exportIndex(), context.getRemoteSocketAddress().getAddress());
+                var fsLocations = new fs_locations4();
+                fsLocations.locations = Misc.parseFsLocations(export.getReferral());
+                fsLocations.fs_root = new pathname4(new component4[]{new component4(export.getPath())});
+                return Optional.of(new fattr4_fs_locations(fsLocations));
             case nfs4_prot.FATTR4_HIDDEN:
                 return Optional.empty();
             case nfs4_prot.FATTR4_HOMOGENEOUS:
@@ -356,6 +347,10 @@ public class OperationGETATTR extends AbstractNFSv4Operation {
 
                 if (mofi == 0x00b0a23a /* it's a root*/) {
                     mofi = 0x12345678;
+                }
+
+                if (inode.isReferral()) {
+                    mofi++;
                 }
 
                 fattr4_mounted_on_fileid mounted_on_fileid = new fattr4_mounted_on_fileid(mofi);
