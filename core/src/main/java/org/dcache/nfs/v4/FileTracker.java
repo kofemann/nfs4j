@@ -211,7 +211,7 @@ public class FileTracker {
                 var fh = new nfs_fh4(inode.toNfsHandle());
                 int recalledDelegations = existingDelegations.stream()
                         .filter(d -> d.client().isLeaseValid())
-                        .filter(d -> d.client().getId().equals(client.getId()))
+                        .filter(d -> !d.client().getId().equals(client.getId()))
                         .reduce(0, (c, d) -> {
                             try {
                                 d.client().getCB().cbDelegationRecall(fh, d.delegationStateid().stateid(), false);
