@@ -58,6 +58,7 @@ public class OperationWRITETest {
 
         when(stateHandler.getFileTracker()).thenReturn(fileTracker);
         when(fileTracker.getShareAccess(any(), any(), any())).thenReturn(nfs4_prot.OPEN4_SHARE_ACCESS_WRITE);
+        when(fileTracker.getOpenOrDelegationAccessMode(any(), any(), any())).thenReturn(nfs4_prot.OPEN4_SHARE_ACCESS_WRITE);
         when(stateHandler.getClientIdByStateId(any())).thenReturn(client);
         when(session.getClient()).thenReturn(client);
         when(stateHandler.getClientIdByStateId(any())).thenReturn(client);
@@ -94,6 +95,7 @@ public class OperationWRITETest {
 
         when(stateHandler.getFileTracker()).thenReturn(fileTracker);
         when(fileTracker.getShareAccess(any(), any(), any())).thenReturn(nfs4_prot.OPEN4_SHARE_ACCESS_WRITE);
+        when(fileTracker.getOpenOrDelegationAccessMode(any(), any(), any())).thenReturn(nfs4_prot.OPEN4_SHARE_ACCESS_WRITE);
         when(stateHandler.getClientIdByStateId(any())).thenReturn(client);
         when(session.getClient()).thenReturn(client);
         when(stateHandler.getClientIdByStateId(any())).thenReturn(client);
@@ -130,6 +132,7 @@ public class OperationWRITETest {
 
         when(stateHandler.getFileTracker()).thenReturn(fileTracker);
         when(fileTracker.getShareAccess(any(), any(), any())).thenReturn(nfs4_prot.OPEN4_SHARE_ACCESS_WRITE);
+        when(fileTracker.getOpenOrDelegationAccessMode(any(), any(), any())).thenReturn(nfs4_prot.OPEN4_SHARE_ACCESS_WRITE);
         when(stateHandler.getClientIdByStateId(any())).thenReturn(client);
         when(session.getClient()).thenReturn(client);
         when(stateHandler.getClientIdByStateId(any())).thenReturn(client);

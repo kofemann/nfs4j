@@ -22,6 +22,8 @@ package org.dcache.nfs.v4;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.OpenModeException;
+import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_argop4;
 import org.dcache.nfs.v4.xdr.nfs_opnum4;
 import org.dcache.nfs.v4.xdr.READ4resok;
@@ -56,9 +58,7 @@ public class OperationREAD extends AbstractNFSv4Operation {
             throw new InvalException();
         }
 
-        // check tat client have provided valid stateid
-        Stateids.checkIOStateid(_args.opread.stateid);
-
+        NFS4Client client;
         if (context.getMinorversion() == 0) {
             /*
              * The NFSv4.0 spec requires lease renewal on READ.
@@ -68,18 +68,23 @@ public class OperationREAD extends AbstractNFSv4Operation {
              * lease time done through SEQUENCE operations.
              */
             context.getStateHandler().updateClientLeaseTime(_args.opread.stateid);
+            client = context.getStateHandler().getClientIdByStateId(_args.opread.stateid);
         } else {
-            var client = context.getSession().getClient();
-            client.state(_args.opread.stateid); // will throw BAD_STATEID if stateid is not valid
+            client = context.getSession().getClient();
         }
 
+        var inode = context.currentInode();
+        int shareAccess = context.getStateHandler().getFileTracker().getOpenOrDelegationAccessMode(client, inode, _args.opread.stateid);
+        if ((shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_READ) == 0) {
+            throw new OpenModeException("Invalid open mode");
+        }
 
         long offset = _args.opread.offset.value;
         int count = _args.opread.count.value;
 
         ByteBuffer buf = ByteBuffer.allocate(count);
 
-        int bytesReaded = context.getFs().read(context.currentInode(), buf, offset);
+        int bytesReaded = context.getFs().read(inode, buf, offset);
         if (bytesReaded < 0) {
             throw new NfsIoException("IO not allowed");
         }

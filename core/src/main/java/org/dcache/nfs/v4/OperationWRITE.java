@@ -64,9 +64,6 @@ public class OperationWRITE extends AbstractNFSv4Operation {
             throw new InvalException("path is a symlink");
         }
 
-        // check tat client have provided valid stateid
-        Stateids.checkIOStateid(_args.opwrite.stateid);
-
         NFS4Client client;
         if (context.getMinorversion() == 0) {
             /*
@@ -83,8 +80,8 @@ public class OperationWRITE extends AbstractNFSv4Operation {
         }
 
         var inode = context.currentInode();
-        // will throw BAD_STATEID if stateid is not valid
-        int shareAccess = context.getStateHandler().getFileTracker().getShareAccess(client, inode, _args.opwrite.stateid);
+
+        int shareAccess = context.getStateHandler().getFileTracker().getOpenOrDelegationAccessMode(client, inode, _args.opwrite.stateid);
         if ((shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) == 0) {
             throw new OpenModeException("Invalid open mode");
         }
