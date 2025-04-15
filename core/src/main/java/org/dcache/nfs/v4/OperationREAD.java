@@ -56,6 +56,9 @@ public class OperationREAD extends AbstractNFSv4Operation {
             throw new InvalException();
         }
 
+        // check tat client have provided valid stateid
+        Stateids.checkIOStateid(_args.opread.stateid);
+
         if (context.getMinorversion() == 0) {
             /*
              * The NFSv4.0 spec requires lease renewal on READ.
@@ -69,6 +72,7 @@ public class OperationREAD extends AbstractNFSv4Operation {
             var client = context.getSession().getClient();
             client.state(_args.opread.stateid); // will throw BAD_STATEID if stateid is not valid
         }
+
 
         long offset = _args.opread.offset.value;
         int count = _args.opread.count.value;

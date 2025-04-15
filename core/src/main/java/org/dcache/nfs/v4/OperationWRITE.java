@@ -64,6 +64,9 @@ public class OperationWRITE extends AbstractNFSv4Operation {
             throw new InvalException("path is a symlink");
         }
 
+        // check tat client have provided valid stateid
+        Stateids.checkIOStateid(_args.opwrite.stateid);
+
         NFS4Client client;
         if (context.getMinorversion() == 0) {
             /*

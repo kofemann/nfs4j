@@ -146,4 +146,10 @@ public class Stateids {
         }
     }
 
+    public static void checkIOStateid(stateid4 stateid) throws BadStateidException {
+        if ((stateid.other[11] != OPEN_STATE_ID) && (stateid.other[11] != LOCK_STATE_ID) && (stateid.other[11] != DELEGATION_STATE_ID)) {
+            throw new BadStateidException("Can't perform IO with give stateid");
+        }
+    }
+
 }
