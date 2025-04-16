@@ -277,4 +277,20 @@ public class FileTrackerTest {
         assertTrue("Read delegation not granted", openRecord2.hasDelegation());
 
     }
+
+    @Test
+    public void shouldIssueReadDelegationOnMultipleOpens() throws Exception {
+
+        NFS4Client client = createClient(sh);
+        StateOwner stateOwner = client.getOrCreateOwner("client".getBytes(StandardCharsets.UTF_8), new seqid4(0));
+
+        nfs_fh4 fh = generateFileHandle();
+        Inode inode = Inode.forFile(fh.value);
+
+        var openRecord1 = tracker.addOpen(client, stateOwner, inode, OPEN4_SHARE_ACCESS_READ, 0);
+        assertFalse("Delegation not expected, but granted", openRecord1.hasDelegation());
+
+        var openRecord2 = tracker.addOpen(client, stateOwner, inode, OPEN4_SHARE_ACCESS_READ, 0);
+        assertTrue("Read opportunistic delegation not granted", openRecord2.hasDelegation());
+    }
 }

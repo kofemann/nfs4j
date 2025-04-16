@@ -290,8 +290,7 @@ public class FileTracker {
             // access mode and return the same stateid as required by rfc5661#18.16.3
 
             for (OpenState os : opens) {
-                if (os.client.getId() == client.getId() &&
-                        os.getOwner().equals(owner)) {
+                if (os.client.getId() == client.getId()) {
                         os.shareAccess |= shareAccess;
                         os.shareDeny |= shareDeny;
 
@@ -305,6 +304,19 @@ public class FileTracker {
                         os.stateid.seqid++;
                         //we need to return copy to avoid modification by concurrent opens
                         var openStateid = new stateid4(os.stateid.other, os.stateid.seqid);
+
+                        // if we have more than one open for read , then lets delegate
+                        // REVISIT: we need a smarter heuristic to detect open/close in a loop
+                        if (canDelegateRead && (os.shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_BOTH) == nfs4_prot.OPEN4_SHARE_ACCESS_READ) {
+
+                            var delegationState = client.createDelegationState(os.getOwner());
+                            var delegation = new DelegationState(client, delegationState, open_delegation_type4.OPEN_DELEGATE_READ);
+                            delegations.computeIfAbsent(fileId, x -> new ArrayList<>(1))
+                                    .add(delegation);
+
+                            return new OpenRecord(openStateid, delegationState.stateid(), true);
+                        }
+
                         return new OpenRecord(openStateid, null, false);
                 }
             }
@@ -321,7 +333,6 @@ public class FileTracker {
 
             // REVISIT: currently only read-delegations are supported
             if (wantReadDelegation && canDelegateRead) {
-                // REVISIT: currently only read-delegations are supported
                 var delegationStateid = client.createDelegationState(state.getStateOwner());
                 delegations.computeIfAbsent(fileId, x -> new ArrayList<>(1))
                         .add(new DelegationState(client, delegationStateid, open_delegation_type4.OPEN_DELEGATE_READ));
