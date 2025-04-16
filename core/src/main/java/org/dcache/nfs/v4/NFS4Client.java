@@ -365,12 +365,11 @@ public class NFS4Client {
     /**
      * Create a new layout state.
      * @param stateOwner state owner
-     * @param openState open state to derive from
      * @return new layout state.
      * @throws ChimeraNFSException
      */
-    public NFS4State createLayoutState(StateOwner stateOwner, NFS4State openState) throws ChimeraNFSException {
-        return createState(stateOwner, Stateids.LAYOUT_STATE_ID, openState);
+    public NFS4State createLayoutState(StateOwner stateOwner) throws ChimeraNFSException {
+        return createState(stateOwner, Stateids.LAYOUT_STATE_ID, null);
     }
 
     /**

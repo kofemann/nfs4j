@@ -199,8 +199,7 @@ public class NFSv4StateHandlerTest {
 
     @Test
     public void testLayoutStateidType() throws ChimeraNFSException {
-        var openState = _client.createOpenState(_owner);
-        var layoutState = _client.createLayoutState(_owner, openState);
+        var layoutState = _client.createLayoutState(_owner);
         Stateids.checkLayoutStateid(layoutState.stateid());
     }
 
