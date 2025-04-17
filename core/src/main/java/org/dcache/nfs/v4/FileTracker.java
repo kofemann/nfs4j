@@ -407,7 +407,7 @@ public class FileTracker {
      * @param inode the inode of the delegated file.
      */
     public void delegationReturn(NFS4Client client, stateid4 stateid, Inode inode)
-          throws StaleException {
+            throws ChimeraNFSException {
 
         Opaque fileId = new Opaque(inode.getFileId());
         Lock lock = filesLock.get(fileId);
@@ -425,7 +425,7 @@ public class FileTracker {
                     .findFirst()
                     .orElseThrow(StaleException::new);
 
-            delegation.delegationStateid().disposeIgnoreFailures();
+            delegation.delegationStateid().tryDispose();
             fileDelegations.remove(delegation);
             if (fileDelegations.isEmpty()) {
                 delegations.remove(fileId);
