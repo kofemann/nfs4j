@@ -226,7 +226,13 @@ public class FileTracker {
      */
     public OpenRecord addOpen(NFS4Client client, StateOwner owner, Inode inode, int shareAccess, int shareDeny) throws  ChimeraNFSException {
 
+        // client explicitly refused delegation
+        boolean acceptsDelegation = (shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WANT_NO_DELEG) == 0;
+
+        // client explicitly requested read delegation
         boolean wantReadDelegation = (shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WANT_READ_DELEG) != 0;
+
+        // client explicitly requested write delegation
         boolean wantWriteDelegation = (shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG) != 0;
 
         Opaque fileId = new Opaque(inode.getFileId());
@@ -255,13 +261,17 @@ public class FileTracker {
 
             /*
              * delegation is possible if:
+             * - client has not explicitly requested no delegation
              * - client has a callback channel
              * - client does not have a delegation for this file
              * - no other open has write access
              */
-            boolean canDelegateRead = client.getCB() != null &&
-                    (existingDelegations == null || existingDelegations.stream().noneMatch(d -> d.client().getId() == client.getId())) &&
-                    opens.stream().noneMatch(os -> (os.shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) != 0);
+            boolean canDelegateRead = acceptsDelegation && (client.getCB() != null &&
+                    (existingDelegations == null ||
+                            existingDelegations.stream()
+                                    .noneMatch(d -> d.client().getId() == client.getId())) &&
+                            opens.stream()
+                                    .noneMatch(os -> (os.shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) != 0));
 
             // recall any read delegations if write
             if ((existingDelegations != null) && (shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_WRITE) != 0) {
