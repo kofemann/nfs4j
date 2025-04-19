@@ -22,6 +22,7 @@ package org.dcache.nfs.v4;
 import com.google.common.util.concurrent.Striped;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -38,6 +39,7 @@ import org.dcache.nfs.status.DelegRevokedException;
 import org.dcache.nfs.status.InvalException;
 import org.dcache.nfs.status.ShareDeniedException;
 import org.dcache.nfs.status.StaleException;
+import org.dcache.nfs.util.AdaptiveDelegationLogic;
 import org.dcache.nfs.v4.xdr.nfs4_prot;
 import org.dcache.nfs.v4.xdr.nfs_fh4;
 import org.dcache.nfs.v4.xdr.open_delegation_type4;
@@ -71,6 +73,13 @@ public class FileTracker {
      * Delegation records associated with open files.
      */
     private final Map<Opaque, List<DelegationState>> delegations = new ConcurrentHashMap<>();
+
+    /**
+     * Heuristic to offer delegations.
+     */
+    private final AdaptiveDelegationLogic adlHeuristic =
+            new AdaptiveDelegationLogic(1024, 1024, Duration.ofSeconds(20));
+
 
     private static class OpenState {
 
@@ -315,9 +324,9 @@ public class FileTracker {
                         //we need to return copy to avoid modification by concurrent opens
                         var openStateid = new stateid4(os.stateid.other, os.stateid.seqid);
 
-                        // if we have more than one open for read , then lets delegate
-                        // REVISIT: we need a smarter heuristic to detect open/close in a loop
-                        if (canDelegateRead && (os.shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_BOTH) == nfs4_prot.OPEN4_SHARE_ACCESS_READ) {
+                        // yet another open from the same client. Let's check if we can delegate.
+                        if (canDelegateRead && (os.shareAccess & nfs4_prot.OPEN4_SHARE_ACCESS_BOTH) == nfs4_prot.OPEN4_SHARE_ACCESS_READ &&
+                                (wantReadDelegation || adlHeuristic.shouldDelegate(client, inode))) {
 
                             var delegationState = client.createDelegationState(os.getOwner());
                             var delegation = new DelegationState(client, delegationState, open_delegation_type4.OPEN_DELEGATE_READ);
@@ -342,7 +351,7 @@ public class FileTracker {
             var openStateid = new stateid4(stateid.other, stateid.seqid);
 
             // REVISIT: currently only read-delegations are supported
-            if (wantReadDelegation && canDelegateRead) {
+            if (canDelegateRead && (wantReadDelegation || adlHeuristic.shouldDelegate(client, inode))) {
                 var delegationStateid = client.createDelegationState(state.getStateOwner());
                 delegations.computeIfAbsent(fileId, x -> new ArrayList<>(1))
                         .add(new DelegationState(client, delegationStateid, open_delegation_type4.OPEN_DELEGATE_READ));
