@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2015 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2026 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
+import org.dcache.nfs.status.AttrNotSuppException;
 import org.dcache.nfs.status.BadTypeException;
 import org.dcache.nfs.status.NotDirException;
 import org.dcache.nfs.status.NotSuppException;
@@ -62,6 +63,13 @@ public class OperationCREATE extends AbstractNFSv4Operation {
         fattr4 objAttr = _args.opcreate.createattrs;
         int type = _args.opcreate.objtype.type;
         Inode inode;
+
+        for (int i = 0; i < objAttr.attrmask.value.length; i++) {
+            if (i > NFSv4FileAttributes.SUPPORTED_ATTRS_V4_1.length ||
+                (objAttr.attrmask.value[i] & ~NFSv4FileAttributes.SUPPORTED_ATTRS_V4_1[i]) != 0) {
+                throw new AttrNotSuppException("create with unsupported attribute");
+            }
+        }
 
         Stat stat = context.getFs().getattr(context.currentInode());
         String name = NameFilter.convertName(_args.opcreate.objname.value);

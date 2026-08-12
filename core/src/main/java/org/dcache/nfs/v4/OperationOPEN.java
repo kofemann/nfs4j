@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 - 2025 Deutsches Elektronen-Synchroton,
+ * Copyright (c) 2009 - 2026 Deutsches Elektronen-Synchroton,
  * Member of the Helmholtz Association, (DESY), HAMBURG, GERMANY
  *
  * This library is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.dcache.nfs.ChimeraNFSException;
 import org.dcache.nfs.nfsstat;
 import org.dcache.nfs.status.AccessException;
+import org.dcache.nfs.status.AttrNotSuppException;
 import org.dcache.nfs.status.BadXdrException;
 import org.dcache.nfs.status.ExistException;
 import org.dcache.nfs.status.GraceException;
@@ -131,20 +132,32 @@ public class OperationOPEN extends AbstractNFSv4Operation {
                      * REVISIT: we can apply all others as well to avoid extra network round trip.
                      */
                     AttributeMap attributeMap;
+                    int[] providedAttrsBitmap;
 
                     switch (_args.opopen.openhow.how.mode) {
                         case createmode4.UNCHECKED4:
                         case createmode4.GUARDED4:
+                            providedAttrsBitmap = _args.opopen.openhow.how.createattrs.attrmask.value;
                             attributeMap = new AttributeMap(_args.opopen.openhow.how.createattrs);
                             break;
                         case createmode4.EXCLUSIVE4:
+                            providedAttrsBitmap = new int[0];
                             attributeMap = new AttributeMap(null);
                             break;
                         case createmode4.EXCLUSIVE4_1:
+                            providedAttrsBitmap = _args.opopen.openhow.how.ch_createboth.cva_attrs.attrmask.value;
                             attributeMap = new AttributeMap(_args.opopen.openhow.how.ch_createboth.cva_attrs);
                             break;
                         default:
                             throw new BadXdrException("bad value: " + _args.opopen.openhow.how.mode);
+                    }
+
+                    // check that request attributes are supported by the server, event if not applied
+                    for (int i = 0; i < providedAttrsBitmap.length; i++) {
+                        if (i > NFSv4FileAttributes.SUPPORTED_ATTRS_V4_1.length ||
+                              (providedAttrsBitmap[i] & ~NFSv4FileAttributes.SUPPORTED_ATTRS_V4_1[i]) != 0) {
+                            throw new AttrNotSuppException("create with unsupported attribute");
+                        }
                     }
 
                     try {
