@@ -44,6 +44,8 @@ public class MDSOperationExecutor extends AbstractOperationExecutor {
                 return new OperationDELEGPURGE(op);
             case nfs_opnum4.OP_DELEGRETURN:
                 return new OperationDELEGRETURN(op);
+            case nfs_opnum4.OP_WANT_DELEGATION:
+                return new OperationWANT_DELEGATION(op);
             case nfs_opnum4.OP_GETATTR:
                 return new OperationGETATTR(op);
             case nfs_opnum4.OP_GETFH:
